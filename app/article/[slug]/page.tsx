@@ -15,6 +15,7 @@ import { Table } from "@/components/ui/Table";
 import Link from "next/link";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkMdxFrontmatter from "remark-mdx-frontmatter";
+import remarkGfm from "remark-gfm";
 
 const contentDir = path.join(process.cwd(), "content");
 
@@ -37,8 +38,18 @@ export default async function ArticlePage({
       Carousel,
       CarouselContent,
       CarouselItem,
-      CarouselPrevious,
-      CarouselNext,
+      CarouselPrevious: (props) => (
+        <CarouselPrevious
+          {...props}
+          className="bg-gray-800 text-white hover:bg-gray-700"
+        />
+      ),
+      CarouselNext: (props) => (
+        <CarouselNext
+          {...props}
+          className="bg-gray-800 text-white hover:bg-gray-700"
+        />
+      ),
       Button,
       Card,
       CardContent,
@@ -49,13 +60,16 @@ export default async function ArticlePage({
     options: {
       parseFrontmatter: true,
       mdxOptions: {
-        remarkPlugins: [remarkFrontmatter, remarkMdxFrontmatter],
+        remarkPlugins: [remarkFrontmatter, remarkMdxFrontmatter, remarkGfm],
       },
     },
   });
 
+  // Log the compiled content to debug
+  console.log("Compiled MDX Content:", MdxContent);
+
   return (
-    <article className="prose max-w-none overflow-visible dark:prose-invert">
+    <article className="prose max-w-none overflow-visible prose-invert">
       <h1>{frontmatter?.title ?? "Untitled"}</h1>
       <p>{frontmatter?.description ?? "No description"}</p>
       {MdxContent}

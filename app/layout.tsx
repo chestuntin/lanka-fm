@@ -9,8 +9,6 @@ export const metadata = {
 export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="en" className="scroll-smooth dark">
-      {" "}
-      {/* Add 'dark' class */}
       <body>{children}</body>
     </html>
   );
