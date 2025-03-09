@@ -1,0 +1,24 @@
+---
+title: "Using a Carousel in MDX"
+description: "Testing a shadcn-based carousel"
+---
+
+# Carousel Demo
+
+<div className="relative flex justify-center">
+  <Carousel className="w-full max-w-md">
+    <CarouselContent>
+      <CarouselItem>
+        <div className="p-4 bg-blue-100">Slide 1 content here</div>
+      </CarouselItem>
+      <CarouselItem>
+        <div className="p-4 bg-red-100">Slide 2 content here</div>
+      </CarouselItem>
+      <CarouselItem>
+        <div className="p-4 bg-green-100">Slide 3 content here</div>
+      </CarouselItem>
+    </CarouselContent>
+    <CarouselPrevious className="left-0" /> {/* Move closer */}
+    <CarouselNext className="right-0" /> {/* Move closer */}
+  </Carousel>
+</div>
