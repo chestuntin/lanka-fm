@@ -2,16 +2,17 @@ import React from "react";
 
 const ArticleLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="min-h-screen bg-black text-white">
-      <div className="container mx-auto max-w-3xl px-4">
-        <header className="py-4 border-b border-gray-700">
-          <h1 className="text-2xl font-bold">About Us</h1>
-        </header>
-        <main className="py-8">{children}</main>
-        <footer className="py-4 text-center text-sm text-gray-400">
-          <p>© 2025 Your Website</p>
-        </footer>
+    <div className="min-h-screen bg-[#0a0a0a] text-white flex flex-col justify-between">
+      <div className="flex-grow">
+        <div className="container mx-auto max-w-4xl mt-12 mb-8">
+          <div className="bg-black rounded-2xl p-6 border border-gray-800">
+            {children}
+          </div>
+        </div>
       </div>
+      <footer className="py-4 text-center text-sm text-[#d1d5da] mt-auto">
+        <p>© copyright කල්චර් ®</p>
+      </footer>
     </div>
   );
 };

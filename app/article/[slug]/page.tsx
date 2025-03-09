@@ -1,3 +1,4 @@
+import React from "react";
 import fs from "fs/promises";
 import path from "path";
 import { compileMDX } from "next-mdx-remote/rsc";
@@ -12,13 +13,12 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { MyButton } from "@/components/ui/MyButton";
 import { Table } from "@/components/ui/Table";
-import { TaskItem } from "@/components/ui/TaskItem"; // Import the TaskItem component
+import { TaskItem } from "@/components/ui/TaskItem";
 import Link from "next/link";
 import remarkFrontmatter from "remark-frontmatter";
 import remarkMdxFrontmatter from "remark-mdx-frontmatter";
 import remarkGfm from "remark-gfm";
 import remarkDeflist from "remark-deflist";
-import { ReactNode } from "react";
 
 const contentDir = path.join(process.cwd(), "content");
 
@@ -59,11 +59,7 @@ export default async function ArticlePage({
       MyButton,
       Table,
       Link,
-      // Override the li component to detect and handle task list items
       li: (props: any) => {
-        // For debugging
-        // console.log("List item props:", JSON.stringify(props, null, 2));
-
         const firstChild = props.children && props.children[0];
         const isTaskItem =
           firstChild &&
@@ -71,13 +67,9 @@ export default async function ArticlePage({
           typeof firstChild.props.checked !== "undefined";
 
         if (isTaskItem) {
-          // Extract the checked state
           const isChecked = firstChild.props.checked;
-
-          // Try different ways to extract the text content
           let textContent = "";
 
-          // Method 1: Check if there are direct children with text
           if (firstChild.props.children) {
             if (typeof firstChild.props.children === "string") {
               textContent = firstChild.props.children;
@@ -86,13 +78,11 @@ export default async function ArticlePage({
             }
           }
 
-          // Method 2: Try to extract from the parent's other children
           if (
             !textContent &&
             Array.isArray(props.children) &&
             props.children.length > 1
           ) {
-            // Combine all non-checkbox children
             textContent = props.children
               .slice(1)
               .map((child: any) => {
@@ -103,43 +93,12 @@ export default async function ArticlePage({
               .join("");
           }
 
-          // Method 3: Extract from the siblings after the checkbox
-          if (!textContent) {
-            // Look for siblings after the checkbox
-            const siblings = Array.isArray(props.children)
-              ? props.children.slice(1)
-              : [];
-            textContent = siblings
-              .map((sibling: any) => {
-                if (typeof sibling === "string") return sibling;
-                if (sibling?.props?.children) {
-                  if (typeof sibling.props.children === "string") {
-                    return sibling.props.children;
-                  }
-                  if (Array.isArray(sibling.props.children)) {
-                    return sibling.props.children.join("");
-                  }
-                }
-                return "";
-              })
-              .join("");
-          }
-
-          // If we have a parent list item, look for direct text content
           if (!textContent && props.node && props.node.children) {
             const textNodes = props.node.children.filter(
               (child: any) => child.type === "text"
             );
             textContent = textNodes.map((node: any) => node.value).join("");
           }
-
-          // If we still don't have text content, try to use the input's value or placeholder
-          if (!textContent && firstChild.props.value) {
-            textContent = firstChild.props.value;
-          }
-
-          // For debugging only
-          // console.log("Task item:", { isChecked, textContent });
 
           return (
             <TaskItem checked={isChecked} text={textContent || "Task Item"}>
@@ -148,10 +107,8 @@ export default async function ArticlePage({
           );
         }
 
-        // If not a task list item, render as normal li
         return <li {...props} />;
       },
-      // Still override input for other checkboxes
       input: (props: any) => {
         if (props.type === "checkbox") {
           return (
@@ -170,7 +127,7 @@ export default async function ArticlePage({
         remarkPlugins: [
           remarkFrontmatter,
           remarkMdxFrontmatter,
-          remarkGfm, // This plugin is important for GitHub-flavored markdown which includes task lists
+          remarkGfm,
           remarkDeflist,
         ],
       },
@@ -178,10 +135,12 @@ export default async function ArticlePage({
   });
 
   return (
-    <article className="prose max-w-none overflow-visible prose-invert">
-      <h1>{frontmatter?.title ?? "Untitled"}</h1>
-      <p>{frontmatter?.description ?? "No description"}</p>
-      {MdxContent}
-    </article>
+    <div className="w-full px-4 py-6 bg-black">
+      <article className="prose prose-invert w-full max-w-none [&_*]:mx-0">
+        <h1>{frontmatter?.title ?? "Untitled"}</h1>
+        <p>{frontmatter?.description ?? "No description"}</p>
+        {MdxContent}
+      </article>
+    </div>
   );
 }
