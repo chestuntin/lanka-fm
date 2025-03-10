@@ -1,0 +1,226 @@
+---
+title: Motion Experiments
+description: Exploring different animation styles, speeds, and curves with Framer Motion
+---
+
+# Motion Experiments
+
+This document demonstrates various **motion effects**, including easing functions, staggered animations, different paths, and unique interactions.
+
+---
+
+## 1️⃣ Easing Functions
+
+Different easing curves can dramatically change how smooth or snappy an animation feels.
+
+### **Ease-In**
+
+<MotionDiv
+  initial={{ opacity: 0, y: -50 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 1, ease: "easeIn" }}
+  className="p-4 bg-blue-600 rounded-lg text-white mb-5"
+>
+  This fades in with **ease-in** (slower start).
+</MotionDiv>
+
+### **Ease-Out**
+
+<MotionDiv
+  initial={{ opacity: 0, y: -50 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 1, ease: "easeOut" }}
+  className="p-4 bg-green-600 rounded-lg text-white mb-5"
+>
+  This fades in with **ease-out** (slower end).
+</MotionDiv>
+
+### **Ease-In-Out**
+
+<MotionDiv
+  initial={{ opacity: 0, y: -50 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 1, ease: "easeInOut" }}
+  className="p-4 bg-yellow-500 rounded-lg text-white mb-5"
+>
+  This fades in with **ease-in-out** (smooth start and end).
+</MotionDiv>
+
+---
+
+## 2️⃣ Staggered Animations
+
+Elements appearing one after another in a sequence.
+
+<MotionDiv
+  initial="hidden"
+  animate="visible"
+  variants={{
+    visible: { transition: { staggerChildren: 0.3 } },
+  }}
+>
+  <MotionDiv
+    initial={{ opacity: 0, x: -50 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ duration: 0.5 }}
+    className="p-3 bg-purple-600 rounded text-white my-2"
+  >
+    First item appears
+  </MotionDiv>
+  <MotionDiv
+    initial={{ opacity: 0, x: -50 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ duration: 0.5, delay: 0.3 }}
+    className="p-3 bg-indigo-600 rounded text-white my-2"
+  >
+    Second item appears
+  </MotionDiv>
+  <MotionDiv
+    initial={{ opacity: 0, x: -50 }}
+    animate={{ opacity: 1, x: 0 }}
+    transition={{ duration: 0.5, delay: 0.6 }}
+    className="p-3 bg-red-600 rounded text-white my-2"
+  >
+    Third item appears
+  </MotionDiv>
+</MotionDiv>
+
+---
+
+## 3️⃣ Non-Linear Movement
+
+### **Bezier Curves for Custom Motion**
+
+<MotionDiv
+  initial={{ x: -200, opacity: 0 }}
+  animate={{ x: 0, opacity: 1 }}
+  transition={{ duration: 1.5, ease: [0.25, 1, 0.5, 1] }}
+  className="p-4 bg-cyan-500 rounded-lg text-white mb-5"
+>
+  This moves with a **custom Bezier curve**.
+</MotionDiv>
+
+---
+
+## 4️⃣ Circular and Curved Paths
+
+### **Arc Motion**
+
+<MotionDiv
+  initial={{ opacity: 0, pathLength: 0 }}
+  animate={{ opacity: 1, pathLength: 1 }}
+  transition={{ duration: 1.5, ease: "easeOut" }}
+  className="p-4 bg-pink-500 rounded-lg text-white mb-5"
+  style={{ transformOrigin: "center" }}
+>
+  Moves in an **arc** instead of a straight line.
+</MotionDiv>
+
+### **Circular Rotation**
+
+<MotionDiv
+  animate={{ rotate: [0, 360] }}
+  transition={{ duration: 3, repeat: Infinity, ease: "linear" }}
+  className="w-20 h-20 bg-orange-600 mx-auto rounded-full my-8"
+></MotionDiv>
+
+This **spins continuously** in a perfect loop.
+
+---
+
+## 5️⃣ Spring Animations (Bouncy Motion)
+
+### **Soft Spring**
+
+<MotionDiv
+  initial={{ scale: 0.8, opacity: 0 }}
+  animate={{ scale: 1, opacity: 1 }}
+  transition={{ type: "spring", stiffness: 80, damping: 15 }}
+  className="p-4 bg-teal-500 rounded-lg text-white mb-5"
+>
+  A softer **spring effect**.
+</MotionDiv>
+
+### **Snappy Spring**
+
+<MotionDiv
+  initial={{ scale: 0.8, opacity: 0 }}
+  animate={{ scale: 1, opacity: 1 }}
+  transition={{ type: "spring", stiffness: 300, damping: 10 }}
+  className="p-4 bg-lime-500 rounded-lg text-white mb-5"
+>
+  A **snappier, bouncier spring**.
+</MotionDiv>
+
+---
+
+## 6️⃣ Hover & Tap Interactions
+
+### **Hover Effects**
+
+<MotionDiv
+  whileHover={{ scale: 1.1 }}
+  whileTap={{ scale: 0.95 }}
+  className="p-4 bg-indigo-700 rounded cursor-pointer text-center text-white my-4"
+>
+  Hover me to scale up, tap me to shrink.
+</MotionDiv>
+
+### **Color Change on Hover**
+
+<MotionDiv
+  whileHover={{ backgroundColor: "rgb(255, 99, 71)" }}
+  className="p-4 bg-gray-600 rounded cursor-pointer text-center text-white my-4"
+>
+  Hover to change my color!
+</MotionDiv>
+
+---
+
+## 7️⃣ Looping and Pulsing
+
+### **Pulsing Effect**
+
+<MotionDiv
+  animate={{ scale: [1, 1.1, 1] }}
+  transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+  className="p-4 bg-blue-800 rounded-lg text-white mb-5"
+>
+  This **pulses continuously**.
+</MotionDiv>
+
+### **Side-to-Side Wave**
+
+<MotionDiv
+  animate={{ x: [-20, 20, -20] }}
+  transition={{ duration: 1.5, repeat: Infinity, ease: "easeInOut" }}
+  className="p-4 bg-red-500 rounded-lg text-white mb-5"
+>
+  This moves **side to side in a loop**.
+</MotionDiv>
+
+---
+
+## 🔥 **Summary**
+
+- **Easing Functions**: Control how animations start and stop.
+- **Staggered Effects**: Delay elements for a sequential appearance.
+- **Non-Linear Motion**: Use Bezier curves for natural movement.
+- **Curved Paths**: Move elements in arcs or circles.
+- **Spring Physics**: Add bounce and elasticity.
+- **Interactive Animations**: Hover, tap, and color changes.
+- **Looping & Pulsing**: Make animations continuous and smooth.
+
+With Framer Motion, you can create **engaging, interactive, and dynamic** animations effortlessly! 🚀
+
+---
+
+## 8️⃣ **Shadcn Button with Hover Color Change**
+
+<MotionDiv
+  whileHover={{ backgroundColor: "#86efac" }}
+  transition={{ duration: 0.3 }}
+  className="inline-block"
+>
+  <Button className="bg-green-700 text-white px-4 py-2">Hover me!</Button>
+</MotionDiv>

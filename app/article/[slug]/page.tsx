@@ -19,7 +19,8 @@ import remarkFrontmatter from "remark-frontmatter";
 import remarkMdxFrontmatter from "remark-mdx-frontmatter";
 import remarkGfm from "remark-gfm";
 import remarkDeflist from "remark-deflist";
-// Import client motion components
+
+// ✅ Import motion & physics components from separate files
 import {
   MotionDiv,
   MotionHeading,
@@ -27,6 +28,8 @@ import {
   MotionSpan,
   MotionSection,
 } from "@/components/ClientMotion";
+
+import { BouncyBall } from "@/components/ReactSpring"; // ✅ Imported from the client component
 
 const contentDir = path.join(process.cwd(), "content");
 
@@ -87,6 +90,9 @@ export default async function ArticlePage({
       MotionParagraph,
       MotionSpan,
       MotionSection,
+
+      // ✅ Add React Spring component here
+      BouncyBall,
 
       // List handling
       li: (props: any) => {
