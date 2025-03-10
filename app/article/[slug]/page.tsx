@@ -30,6 +30,7 @@ import {
 } from "@/components/ClientMotion";
 
 import { BouncyBall } from "@/components/ReactSpring"; // ✅ Imported from the client component
+import PdfViewer from "@/components/PdfViewer";
 
 const contentDir = path.join(process.cwd(), "content");
 
