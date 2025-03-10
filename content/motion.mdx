@@ -1,0 +1,99 @@
+---
+title: Motion Elements Demo
+description: Testing Framer Motion components in MDX
+---
+
+# Motion Elements Demo
+
+This is regular MDX content.
+
+<MotionDiv
+  initial={{ opacity: 0, y: 20 }}
+  animate={{ opacity: 1, y: 0 }}
+  transition={{ duration: 0.8 }}
+  className="p-5 bg-blue-600 rounded-lg text-white mb-5"
+>
+  This content fades in and moves up!
+</MotionDiv>
+
+## More examples:
+
+<MotionHeading
+  initial={{ opacity: 0, x: -50 }}
+  animate={{ opacity: 1, x: 0 }}
+  transition={{ delay: 0.5, duration: 0.5 }}
+  className="text-green-400"
+>
+  This heading slides in from the left
+</MotionHeading>
+
+{/* Use MotionDiv instead of MotionParagraph to avoid p-in-p nesting */}
+
+<MotionDiv
+  initial={{ opacity: 0 }}
+  animate={{ opacity: 1 }}
+  transition={{ delay: 0.8, duration: 1 }}
+  className="text-yellow-300 my-4"
+>
+  This text fades in with a delay.
+</MotionDiv>
+
+<Card className="my-4">
+  <CardContent>
+    <MotionDiv
+      initial={{ scale: 0.8, opacity: 0 }}
+      animate={{ scale: 1, opacity: 1 }}
+      transition={{ delay: 1, duration: 0.5 }}
+      className="p-4"
+    >
+      This card content scales in after a delay!
+    </MotionDiv>
+  </CardContent>
+</Card>
+
+<Carousel className="w-full max-w-xl mx-auto my-8">
+  <CarouselContent>
+    <CarouselItem>
+      <MotionDiv
+        initial={{ rotate: -10, opacity: 0 }}
+        animate={{ rotate: 0, opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        className="p-4 bg-purple-700 rounded h-40 flex items-center justify-center text-white"
+      >
+        Carousel Item 1 with animation
+      </MotionDiv>
+    </CarouselItem>
+    <CarouselItem>
+      <MotionDiv
+        initial={{ rotate: 10, opacity: 0 }}
+        animate={{ rotate: 0, opacity: 1 }}
+        transition={{ duration: 0.5, delay: 0.2 }}
+        className="p-4 bg-pink-700 rounded h-40 flex items-center justify-center text-white"
+      >
+        Carousel Item 2 with animation
+      </MotionDiv>
+    </CarouselItem>
+  </CarouselContent>
+  <CarouselPrevious />
+  <CarouselNext />
+</Carousel>
+
+## Interactive Animation
+
+<MotionDiv
+  whileHover={{ scale: 1.05 }}
+  whileTap={{ scale: 0.95 }}
+  className="p-4 bg-indigo-600 rounded cursor-pointer text-center text-white my-4"
+>
+  Hover or tap me!
+</MotionDiv>
+
+<MotionDiv
+  animate={{ rotate: 360 }}
+  transition={{
+    repeat: Infinity,
+    duration: 2,
+    ease: "linear",
+  }}
+  className="w-20 h-20 bg-orange-500 mx-auto my-8"
+></MotionDiv>

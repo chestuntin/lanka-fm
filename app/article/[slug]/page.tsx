@@ -19,6 +19,14 @@ import remarkFrontmatter from "remark-frontmatter";
 import remarkMdxFrontmatter from "remark-mdx-frontmatter";
 import remarkGfm from "remark-gfm";
 import remarkDeflist from "remark-deflist";
+// Import client motion components
+import {
+  MotionDiv,
+  MotionHeading,
+  MotionParagraph,
+  MotionSpan,
+  MotionSection,
+} from "@/components/ClientMotion";
 
 const contentDir = path.join(process.cwd(), "content");
 
@@ -33,11 +41,24 @@ export default async function ArticlePage({
   params: { slug: string };
 }) {
   const filePath = path.join(contentDir, `${params.slug}.mdx`);
-  const source = await fs.readFile(filePath, "utf8");
+  let source;
+
+  try {
+    source = await fs.readFile(filePath, "utf8");
+  } catch (error) {
+    console.error(`Error reading file: ${error}`);
+    return (
+      <div className="w-full px-4 py-6 bg-black text-white">
+        <h1>Error loading content</h1>
+        <p>Could not find or read the requested article.</p>
+      </div>
+    );
+  }
 
   const { content: MdxContent, frontmatter } = await compileMDX<Frontmatter>({
     source,
     components: {
+      // UI components
       Carousel,
       CarouselContent,
       CarouselItem,
@@ -59,6 +80,15 @@ export default async function ArticlePage({
       MyButton,
       Table,
       Link,
+
+      // Motion components - explicitly mapped
+      MotionDiv,
+      MotionHeading,
+      MotionParagraph,
+      MotionSpan,
+      MotionSection,
+
+      // List handling
       li: (props: any) => {
         const firstChild = props.children && props.children[0];
         const isTaskItem =
