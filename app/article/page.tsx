@@ -29,13 +29,17 @@ export default async function ArticlesPage() {
     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
   return (
-    <div className="max-w-3xl mx-auto px-0 py-12 bg-black">
-      <h1 className="text-4xl font-bold text-white mb-4 pl-0">Articles</h1>
-      <ul className="space-y-0.5 list-disc pl-0">
+    <div className="max-w-3xl mx-auto px-0 py-12 bg-[#09090b] text-[16px] leading-[24px]">
+      <h1 className="text-4xl font-bold text-white mb-4 -ml-2">Articles</h1>
+      <p className="text-gray-300 mb-6 -ml-2">
+        Explore our collection of thoughts, insights, and explorations on
+        culture, technology, and the arts.
+      </p>
+      <ul className="space-y-0.5 list-disc pl-1">
         {articles.map((article) => (
           <li key={article.slug} className="group">
             <Link href={`/article/${article.slug}`} className="block">
-              <span className="text-lg text-white group-hover:text-blue-400 transition-colors duration-200">
+              <span className="text-white group-hover:text-blue-400 transition-colors duration-200">
                 {article.title}
               </span>
             </Link>

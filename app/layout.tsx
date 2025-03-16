@@ -2,8 +2,17 @@ import { ReactNode } from "react";
 import "./globals.css"; // Assuming you have global styles
 
 export const metadata = {
-  title: "My App",
-  description: "A Next.js app with MDX and dark mode",
+  title: "කල්චර් | kultjur",
+  description: "Exploring culture, technology, economics, politics, and the arts through thoughtful articles and insights",
+  keywords: ["kultjur", "technology", "economics", "politics", "arts", "blog"],
+  openGraph: {
+    title: "කල්චර් | kultjur",
+    description: "Exploring culture, technology, economics, politics, and the arts",
+    url: "https://kultjur.lk",
+    siteName: "කල්චර්",
+    locale: "en_US",
+    type: "website",
+  },
 };
 
 export default function RootLayout({ children }: { children: ReactNode }) {

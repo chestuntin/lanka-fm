@@ -30,7 +30,6 @@ import {
 } from "@/components/ClientMotion";
 
 import { BouncyBall } from "@/components/ReactSpring"; // ✅ Imported from the client component
-import PdfViewer from "@/components/PdfViewer";
 
 const contentDir = path.join(process.cwd(), "content");
 
@@ -172,8 +171,8 @@ export default async function ArticlePage({
   });
 
   return (
-    <div className="w-full px-4 py-6 bg-black">
-      <article className="prose prose-invert w-full max-w-none [&_*]:mx-0">
+    <div className="w-full px-4 py-0 bg-[#09090b]">
+      <article className="prose prose-invert w-full max-w-none [&_*]:mx-0 bg-[#09090b] -mt-2">
         <h1>{frontmatter?.title ?? "Untitled"}</h1>
         <p>{frontmatter?.description ?? "No description"}</p>
         {MdxContent}
