@@ -1,6 +1,7 @@
 "use client";
 
 import { usePathname } from "next/navigation";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Breadcrumb,
@@ -10,7 +11,6 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "@/components/ui/breadcrumb";
-import { useEffect, useState } from "react";
 
 export function DynamicBreadcrumb() {
   const pathname = usePathname();
@@ -105,9 +105,9 @@ export function DynamicBreadcrumb() {
         </BreadcrumbItem>
 
         {segments.map((segment, index) => (
-          <>
-            <BreadcrumbSeparator key={`sep-${segment.href}`} />
-            <BreadcrumbItem key={segment.href}>
+          <React.Fragment key={`segment-${segment.href}`}>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
               {index === segments.length - 1 ? (
                 <BreadcrumbPage className="text-white">
                   {segment.name}
@@ -123,7 +123,7 @@ export function DynamicBreadcrumb() {
                 </BreadcrumbLink>
               )}
             </BreadcrumbItem>
-          </>
+          </React.Fragment>
         ))}
       </BreadcrumbList>
     </Breadcrumb>
