@@ -3,6 +3,7 @@
 import { Globe } from "@/components/magicui/globe";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { DynamicBreadcrumb } from "@/components/ui/dynamic-breadcrumb";
 
 export default function HomePage() {
   return (
@@ -16,20 +17,11 @@ export default function HomePage() {
       </div>
 
       {/* Navigation bar */}
-      <div className="w-full max-w-lg mt-4 p-4 flex items-center">
-        <div className="flex items-center space-x-2 text-sm">
-          <a
-            href="/"
-            className="text-gray-400 hover:text-white transition-colors"
-          >
-            Home
-          </a>
-          <span className="text-gray-500">/</span>
-          <span className="text-white">Main</span>
-        </div>
+      <div className="w-full max-w-lg mt-4 pl-4 pt-4 pb-4 flex items-center">
+        <DynamicBreadcrumb />
 
-        <div className="ml-auto">
-          <Button variant="link" size="default" asChild>
+        <div className="ml-auto flex justify-end">
+          <Button variant="link" size="default" asChild className="font-normal">
             <Link href="/article">Enter</Link>
           </Button>
         </div>
