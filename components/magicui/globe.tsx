@@ -86,7 +86,8 @@ export function Globe({
       width: width * 2,
       height: width * 2,
       onRender: (state) => {
-        if (!pointerInteracting.current) phi += 0.005;
+        if (!pointerInteracting.current) phi += 0.002;
+        // Reduced from 0.005 to slow down the spin
         state.phi = phi + rs.get();
         state.width = width * 2;
         state.height = width * 2;
