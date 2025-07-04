@@ -13,3 +13,18 @@ export function middleware(request: NextRequest) {
 
   return NextResponse.next();
 }
+
+// Only run middleware on routes that are not static files or Next.js internals
+export const config = {
+  matcher: [
+    /*
+      Match all request paths except for the ones starting with:
+      - _next
+      - static
+      - favicon.ico
+      - robots.txt
+      - etc.
+    */
+    "/((?!_next/static|_next/image|favicon.ico|robots.txt|sitemap.xml|api).*)",
+  ],
+};
