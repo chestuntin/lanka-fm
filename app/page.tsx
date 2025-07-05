@@ -19,14 +19,14 @@ const posters = [
 export default function HomePage() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-[#09090b]">
-      <div className="relative w-full max-w-lg mx-auto">
+      <div className="relative w-full max-w-xl mx-auto">
         <Carousel>
           <CarouselContent>
             {posters.map((src, idx) => (
               <CarouselItem key={idx}>
                 <div
                   className="relative aspect-[1081/1351] w-full rounded-2xl border border-[#333] overflow-hidden shadow-lg mx-auto"
-                  style={{ width: "320px", height: "400px" }}
+                  style={{ width: "400px", height: "500px" }}
                 >
                   <Image
                     src={src}
@@ -40,8 +40,8 @@ export default function HomePage() {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious />
-          <CarouselNext />
+          <CarouselPrevious className="-left-6" />
+          <CarouselNext className="-right-6" />
         </Carousel>
       </div>
     </div>
