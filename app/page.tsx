@@ -1,3 +1,4 @@
+"use client";
 import Image from "next/image";
 import {
   Carousel,
@@ -20,15 +21,12 @@ const posters = [
 export default function HomePage() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-[#09090b]">
-      <div className="relative w-full max-w-2xl mx-auto">
+      <div className="relative w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-2xl mx-auto">
         <Carousel plugins={[Autoplay({ delay: 3000 })]}>
           <CarouselContent>
             {posters.map((src, idx) => (
               <CarouselItem key={idx}>
-                <div
-                  className="relative aspect-[1081/1351] w-full rounded-3xl border border-white overflow-hidden shadow-lg mx-auto"
-                  style={{ width: "480px", height: "600px" }}
-                >
+                <div className="relative aspect-[1081/1351] w-full rounded-3xl border border-white overflow-hidden shadow-lg mx-auto">
                   <Image
                     src={src}
                     alt={`Poster ${idx + 1}`}
