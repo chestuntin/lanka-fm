@@ -19,21 +19,21 @@ const posters = [
 export default function HomePage() {
   return (
     <div className="min-h-screen bg-[#09090b] text-white flex items-center justify-center">
-      <div className="w-full max-w-2xl relative">
+      <div className="w-full max-w-md relative">
         <Carousel>
           <CarouselContent>
             {posters.map((src, idx) => (
               <CarouselItem key={idx}>
                 <div
-                  className="relative w-full"
-                  style={{ aspectRatio: "4 / 5" }}
+                  className="relative w-full rounded-2xl border border-[#333] overflow-hidden shadow-lg"
+                  style={{ aspectRatio: "4 / 5", maxHeight: "60vh" }}
                 >
                   <Image
                     src={src}
                     alt={`Poster ${idx + 1}`}
                     fill
                     style={{ objectFit: "contain" }}
-                    className="rounded-lg"
+                    className="rounded-2xl"
                     priority={idx === 0}
                   />
                 </div>
