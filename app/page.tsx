@@ -26,7 +26,7 @@ export default function HomePage() {
           <CarouselContent>
             {posters.map((src, idx) => (
               <CarouselItem key={idx}>
-                <div className="relative aspect-[1081/1351] w-full rounded-3xl border border-white overflow-hidden shadow-lg mx-auto">
+                <div className="relative aspect-[1081/1351] w-full rounded-3xl border border-white overflow-hidden shadow-lg mx-auto md:max-h-[70vh]">
                   <Image
                     src={src}
                     alt={`Poster ${idx + 1}`}
