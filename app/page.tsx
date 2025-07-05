@@ -24,7 +24,10 @@ export default function HomePage() {
           <CarouselContent>
             {posters.map((src, idx) => (
               <CarouselItem key={idx}>
-                <div className="flex items-center justify-center h-[60vw] max-h-[80vh]">
+                <div
+                  className="relative w-full"
+                  style={{ aspectRatio: "4 / 5" }}
+                >
                   <Image
                     src={src}
                     alt={`Poster ${idx + 1}`}
