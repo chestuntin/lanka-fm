@@ -8,10 +8,12 @@ import {
 } from "@/components/ui/carousel";
 
 const posters = [
-  "/posters/poster1.jpg",
-  "/posters/poster2.jpg",
-  "/posters/poster3.jpg",
-  // Add more poster paths as needed
+  "/posters-homepage/poster-1.png",
+  "/posters-homepage/poster-2.png",
+  "/posters-homepage/poster-3.png",
+  "/posters-homepage/poster-4.png",
+  "/posters-homepage/poster-5.png",
+  "/posters-homepage/poster-6.png",
 ];
 
 export default function HomePage() {
