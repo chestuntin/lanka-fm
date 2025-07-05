@@ -39,8 +39,8 @@ export default function HomePage() {
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="-left-14" />
-          <CarouselNext className="-right-14" />
+          <CarouselPrevious className="left-2 md:-left-14" />
+          <CarouselNext className="right-2 md:-right-14" />
         </Carousel>
       </div>
     </div>
