@@ -6,6 +6,7 @@ import {
   CarouselPrevious,
   CarouselNext,
 } from "@/components/ui/carousel";
+import Autoplay from "embla-carousel-autoplay";
 
 const posters = [
   "/posters-homepage/poster-1.png",
@@ -20,7 +21,7 @@ export default function HomePage() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-[#09090b]">
       <div className="relative w-full max-w-2xl mx-auto">
-        <Carousel>
+        <Carousel plugins={[Autoplay({ delay: 3000 })]}>
           <CarouselContent>
             {posters.map((src, idx) => (
               <CarouselItem key={idx}>
