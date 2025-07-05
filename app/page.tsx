@@ -32,7 +32,7 @@ export default function HomePage() {
                     src={src}
                     alt={`Poster ${idx + 1}`}
                     fill
-                    style={{ objectFit: "contain" }}
+                    style={{ objectFit: "cover" }}
                     className="rounded-2xl"
                     priority={idx === 0}
                   />
