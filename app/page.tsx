@@ -25,7 +25,7 @@ export default function HomePage() {
             {posters.map((src, idx) => (
               <CarouselItem key={idx}>
                 <div
-                  className="relative aspect-[1081/1351] w-full rounded-lg border border-[#333] overflow-hidden shadow-lg mx-auto"
+                  className="relative aspect-[1081/1351] w-full rounded-3xl border border-white overflow-hidden shadow-lg mx-auto"
                   style={{ width: "480px", height: "600px" }}
                 >
                   <Image
@@ -33,15 +33,15 @@ export default function HomePage() {
                     alt={`Poster ${idx + 1}`}
                     fill
                     style={{ objectFit: "cover" }}
-                    className="rounded-lg"
+                    className="rounded-3xl"
                     priority={idx === 0}
                   />
                 </div>
               </CarouselItem>
             ))}
           </CarouselContent>
-          <CarouselPrevious className="-left-3" />
-          <CarouselNext className="-right-3" />
+          <CarouselPrevious className="left-2" />
+          <CarouselNext className="right-2" />
         </Carousel>
       </div>
     </div>
