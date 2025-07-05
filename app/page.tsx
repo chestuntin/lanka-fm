@@ -21,7 +21,7 @@ const posters = [
 export default function HomePage() {
   return (
     <div className="flex items-center justify-center min-h-screen bg-[#09090b]">
-      <div className="relative w-full max-w-xs sm:max-w-md md:max-w-lg mx-auto">
+      <div className="relative w-full max-w-sm sm:max-w-lg md:max-w-xl lg:max-w-3xl mx-auto">
         <Carousel plugins={[Autoplay({ delay: 3000 })]}>
           <CarouselContent>
             {posters.map((src, idx) => (
