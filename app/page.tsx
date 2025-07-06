@@ -7,7 +7,6 @@ import {
   CarouselPrevious,
   CarouselNext,
 } from "@/components/ui/carousel";
-import Autoplay from "embla-carousel-autoplay";
 import { useRef, useEffect, useState } from "react";
 import Head from "next/head";
 
@@ -413,7 +412,7 @@ export default function HomePage() {
           style={{ minHeight: 0 }}
         >
           {/* Carousel */}
-          <Carousel plugins={[Autoplay({ delay: 3000 })]}>
+          <Carousel>
             <CarouselContent>
               {posters.map((src, idx) => (
                 <CarouselItem key={idx}>
