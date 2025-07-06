@@ -33,6 +33,49 @@ function useIsMobile() {
   return isMobile;
 }
 
+// Visitor Counter Component
+function VisitorCounter() {
+  const [count, setCount] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
+
+  useEffect(() => {
+    // Load count from localStorage or start with a base number
+    const savedCount = localStorage.getItem("visitorCount");
+    const baseCount = savedCount ? parseInt(savedCount) : 1247; // Start with a realistic number
+    setCount(baseCount);
+
+    // Increment count on first visit
+    const hasVisited = sessionStorage.getItem("hasVisited");
+    if (!hasVisited) {
+      const newCount = baseCount + 1;
+      setCount(newCount);
+      localStorage.setItem("visitorCount", newCount.toString());
+      sessionStorage.setItem("hasVisited", "true");
+    }
+
+    // Fade in effect
+    const timer = setTimeout(() => setIsVisible(true), 1000);
+    return () => clearTimeout(timer);
+  }, []);
+
+  return (
+    <div
+      className={`fixed bottom-4 right-4 bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-2 transition-opacity duration-1000 ${
+        isVisible ? "opacity-100" : "opacity-0"
+      }`}
+      style={{
+        fontSize: "12px",
+        textShadow: "0 1px 2px rgba(0,0,0,0.8)",
+      }}
+    >
+      <div className="text-center">
+        <div className="text-xs opacity-75 mb-1">Visitors</div>
+        <div className="text-lg font-bold">{count.toLocaleString()}</div>
+      </div>
+    </div>
+  );
+}
+
 export default function HomePage() {
   const isMobile = useIsMobile();
   // Bouncing K logic
@@ -401,6 +444,8 @@ export default function HomePage() {
           KULTJUR® Velocity: vx={vel2.x.toFixed(3)}, vy={vel2.y.toFixed(3)}
         </div>
       </div>
+      {/* Visitor Counter */}
+      <VisitorCounter />
       {/* Bouncing K in viewport */}
       <div
         onMouseDown={isMobile ? undefined : handleMouseDown}
