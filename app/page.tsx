@@ -26,7 +26,7 @@ export default function HomePage() {
   const [pos, setPos] = useState({ x: 50, y: 50 });
   const [vel, setVel] = useState({ x: 0.4, y: 0.4 }); // 5x slower
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
-  const K_FONT_SIZE = 32; // px, reduced
+  const K_FONT_SIZE = Math.round(32 * 0.9); // 10% smaller
 
   // Update viewport size on mount and resize
   useEffect(() => {
@@ -209,6 +209,46 @@ export default function HomePage() {
         } else if (nextY <= 0) {
           vy = Math.abs(vy);
           nextY = 0;
+        }
+        // Carousel collision (robust: bounce off closest side)
+        if (carouselRef.current) {
+          const rect = carouselRef.current.getBoundingClientRect();
+          const kLeft = nextX;
+          const kRight = nextX + bouncingSize2.width;
+          const kTop = nextY;
+          const kBottom = nextY + bouncingSize2.height;
+          const cLeft = rect.left;
+          const cRight = rect.right;
+          const cTop = rect.top;
+          const cBottom = rect.bottom;
+          // Check for overlap
+          const overlapX = kRight > cLeft && kLeft < cRight;
+          const overlapY = kBottom > cTop && kTop < cBottom;
+          if (overlapX && overlapY) {
+            // Find the minimal distance to each side
+            const distLeft = Math.abs(kRight - cLeft);
+            const distRight = Math.abs(kLeft - cRight);
+            const distTop = Math.abs(kBottom - cTop);
+            const distBottom = Math.abs(kTop - cBottom);
+            const minDist = Math.min(distLeft, distRight, distTop, distBottom);
+            if (minDist === distLeft) {
+              // Hit left side
+              vx = -Math.abs(vx);
+              nextX = cLeft - bouncingSize2.width;
+            } else if (minDist === distRight) {
+              // Hit right side
+              vx = Math.abs(vx);
+              nextX = cRight;
+            } else if (minDist === distTop) {
+              // Hit top side
+              vy = -Math.abs(vy);
+              nextY = cTop - bouncingSize2.height;
+            } else if (minDist === distBottom) {
+              // Hit bottom side
+              vy = Math.abs(vy);
+              nextY = cBottom;
+            }
+          }
         }
         setVel2({ x: vx, y: vy });
         return {
