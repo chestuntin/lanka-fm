@@ -27,6 +27,34 @@ export default function HomePage() {
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const K_SIZE = 48; // px
 
+  // For debugging: visualize carousel boundaries
+  const [carouselRect, setCarouselRect] = useState<DOMRect | null>(null);
+  useEffect(() => {
+    function updateRect() {
+      if (carouselRef.current) {
+        setCarouselRect(carouselRef.current.getBoundingClientRect());
+      }
+    }
+    updateRect();
+    window.addEventListener("resize", updateRect);
+    return () => window.removeEventListener("resize", updateRect);
+  }, []);
+  // Also update on every animation frame
+  useEffect(() => {
+    let running = true;
+    function update() {
+      if (!running) return;
+      if (carouselRef.current) {
+        setCarouselRect(carouselRef.current.getBoundingClientRect());
+      }
+      requestAnimationFrame(update);
+    }
+    update();
+    return () => {
+      running = false;
+    };
+  }, []);
+
   // Update viewport size on mount and resize
   useEffect(() => {
     function updateSize() {
@@ -123,6 +151,21 @@ export default function HomePage() {
 
   return (
     <>
+      {/* Debug: Carousel bounding box overlay */}
+      {carouselRect && (
+        <div
+          style={{
+            position: "fixed",
+            left: carouselRect.left,
+            top: carouselRect.top,
+            width: carouselRect.width,
+            height: carouselRect.height,
+            border: "2px solid red",
+            zIndex: 9998,
+            pointerEvents: "none",
+          }}
+        />
+      )}
       {/* Bouncing K in viewport */}
       <div
         style={{
