@@ -274,13 +274,21 @@ export default function HomePage() {
   useEffect(() => {
     if (!carouselRef.current) return;
     const rect = carouselRef.current.getBoundingClientRect();
-    // Sinhala: left 20% of carousel
-    const leftMin = rect.left;
-    const leftMax = rect.left + rect.width * 0.2;
+    // Sinhala: spawn logic
+    let leftMin, leftMax;
+    if (isMobile()) {
+      // On mobile, only within carousel's horizontal bounds
+      leftMin = rect.left;
+      leftMax = rect.right - bouncingSize.width;
+    } else {
+      // On desktop, left 20% of carousel
+      leftMin = rect.left;
+      leftMax = rect.left + rect.width * 0.2;
+    }
     // On desktop, yMin is carousel top; on mobile, yMin is viewport top
     const yMin = isMobile() ? 0 : rect.top;
     const yMax = rect.bottom - bouncingSize.height;
-    const randX = leftMin + Math.random() * (leftMax - leftMin);
+    const randX = leftMin + Math.random() * Math.max(1, leftMax - leftMin);
     const randY = yMin + Math.random() * (yMax - yMin);
     setPos({ x: randX, y: randY });
     // Random velocity, not zero
