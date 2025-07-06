@@ -7,6 +7,7 @@ import {
   CarouselPrevious,
   CarouselNext,
 } from "@/components/ui/carousel";
+import { Toggle } from "@/components/ui/toggle";
 import { useRef, useEffect, useState } from "react";
 import Head from "next/head";
 
@@ -86,31 +87,29 @@ function ControlPanel({
 }) {
   return (
     <div className="fixed top-2 right-2 bg-black/70 text-white rounded-md z-[10000] font-mono px-3 py-2 sm:text-[14px] text-[11px]">
-      <div className="flex flex-col gap-2">
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsFrozen(!isFrozen)}
-            className={`px-2 py-1 rounded text-xs font-bold transition-colors ${
-              isFrozen
-                ? "bg-red-600 hover:bg-red-700"
-                : "bg-green-600 hover:bg-green-700"
-            }`}
-          >
-            {isFrozen ? "FROZEN" : "FREEZE"}
-          </button>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            onClick={() => setIsHidden(!isHidden)}
-            className={`px-2 py-1 rounded text-xs font-bold transition-colors ${
-              isHidden
-                ? "bg-blue-600 hover:bg-blue-700"
-                : "bg-gray-600 hover:bg-gray-700"
-            }`}
-          >
-            {isHidden ? "SHOW" : "HIDE"}
-          </button>
-        </div>
+      <div className="flex items-center gap-2">
+        <Toggle
+          pressed={isFrozen}
+          onPressedChange={setIsFrozen}
+          className={`text-xs font-bold transition-colors ${
+            isFrozen
+              ? "bg-red-600 hover:bg-red-700 text-white"
+              : "bg-green-600 hover:bg-green-700 text-white"
+          }`}
+        >
+          {isFrozen ? "FROZEN" : "FREEZE"}
+        </Toggle>
+        <Toggle
+          pressed={isHidden}
+          onPressedChange={setIsHidden}
+          className={`text-xs font-bold transition-colors ${
+            isHidden
+              ? "bg-blue-600 hover:bg-blue-700 text-white"
+              : "bg-gray-600 hover:bg-gray-700 text-white"
+          }`}
+        >
+          {isHidden ? "SHOW" : "HIDE"}
+        </Toggle>
       </div>
     </div>
   );
