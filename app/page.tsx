@@ -42,6 +42,12 @@ export default function HomePage() {
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const K_FONT_SIZE = Math.round(32 * 0.9); // 10% smaller
 
+  // Store the original velocity for decay
+  const ORIGINAL_VEL = { x: 0.4, y: 0.4 };
+  const [decayActive, setDecayActive] = useState(false);
+  const decayStartTime = useRef<number | null>(null);
+  const decayFromVel = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
   // Update viewport size on mount and resize
   useEffect(() => {
     function updateSize() {
@@ -148,7 +154,10 @@ export default function HomePage() {
             }
           }
         }
-        setVel({ x: vx, y: vy });
+        // Only update velocity if decay is not active
+        if (!decayActive) {
+          setVel({ x: vx, y: vy });
+        }
         return {
           x: Math.max(0, Math.min(nextX, width - bouncingSize.width)),
           y: Math.max(0, Math.min(nextY, height - bouncingSize.height)),
@@ -161,7 +170,7 @@ export default function HomePage() {
     }
     return () => cancelAnimationFrame(animationFrame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewport, vel]);
+  }, [viewport, vel, decayActive]);
 
   // --- Second bouncing text (KULTJUR®) ---
   const KULTJUR_FONT_SIZE = Math.round(K_FONT_SIZE * 0.92); // 8% smaller
@@ -324,12 +333,6 @@ export default function HomePage() {
   const dragging = useRef(false);
   const dragOffset = useRef({ x: 0, y: 0 });
   const lastPositions = useRef<{ x: number; y: number; t: number }[]>([]);
-
-  // Store the original velocity for decay
-  const ORIGINAL_VEL = { x: 0.4, y: 0.4 };
-  const [decayActive, setDecayActive] = useState(false);
-  const decayStartTime = useRef<number | null>(null);
-  const decayFromVel = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
 
   function handleMouseDown(e: React.MouseEvent) {
     if (isMobile) return;
