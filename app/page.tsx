@@ -325,6 +325,12 @@ export default function HomePage() {
   const dragOffset = useRef({ x: 0, y: 0 });
   const lastPositions = useRef<{ x: number; y: number; t: number }[]>([]);
 
+  // Store the original velocity for decay
+  const ORIGINAL_VEL = { x: 0.4, y: 0.4 };
+  const [decayActive, setDecayActive] = useState(false);
+  const decayStartTime = useRef<number | null>(null);
+  const decayFromVel = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+
   function handleMouseDown(e: React.MouseEvent) {
     if (isMobile) return;
     dragging.current = true;
@@ -363,11 +369,44 @@ export default function HomePage() {
       if (dt > 0) {
         const vx = (last.x - first.x) / dt / 60; // px/frame
         const vy = (last.y - first.y) / dt / 60;
+        const speed = Math.sqrt(vx * vx + vy * vy);
         setVel({ x: vx, y: vy });
+        if (speed > 5) {
+          // Start linear decay
+          decayFromVel.current = { x: vx, y: vy };
+          decayStartTime.current = Date.now();
+          setDecayActive(true);
+        }
       }
     }
     lastPositions.current = [];
   }
+
+  // Linear decay effect for Sinhala logo
+  useEffect(() => {
+    if (!decayActive) return;
+    let raf: number;
+    function decayStep() {
+      if (!decayActive || decayStartTime.current === null) return;
+      const elapsed = (Date.now() - decayStartTime.current) / 1000;
+      if (elapsed >= 10) {
+        setVel(ORIGINAL_VEL);
+        setDecayActive(false);
+        decayStartTime.current = null;
+        return;
+      }
+      // Linear interpolation
+      const t = elapsed / 10;
+      const from = decayFromVel.current;
+      const vx = from.x + (ORIGINAL_VEL.x - from.x) * t;
+      const vy = from.y + (ORIGINAL_VEL.y - from.y) * t;
+      setVel({ x: vx, y: vy });
+      raf = requestAnimationFrame(decayStep);
+    }
+    raf = requestAnimationFrame(decayStep);
+    return () => cancelAnimationFrame(raf);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [decayActive]);
 
   return (
     <>
