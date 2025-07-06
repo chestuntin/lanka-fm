@@ -43,7 +43,7 @@ function VisitorCounter() {
   useEffect(() => {
     // Load count from localStorage or start with a base number
     const savedCount = localStorage.getItem("visitorCount");
-    const baseCount = savedCount ? parseInt(savedCount) : 1247; // Start with a realistic number
+    const baseCount = savedCount ? parseInt(savedCount) : 59; // Start with 59
     setCount(baseCount);
 
     // Increment count on first visit
