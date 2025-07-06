@@ -28,7 +28,7 @@ function isMobile() {
 export default function HomePage() {
   // Bouncing K logic
   const carouselRef = useRef<HTMLDivElement>(null);
-  const [kState, setKState] = useState({ x: 50, y: 50, color: "#fff" });
+  const [pos, setPos] = useState({ x: 50, y: 50 });
   const [vel, setVel] = useState({ x: 0.4, y: 0.4 }); // 5x slower
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const K_FONT_SIZE = Math.round(32 * 0.9); // 10% smaller
@@ -78,39 +78,26 @@ export default function HomePage() {
   useEffect(() => {
     let animationFrame: number;
     function animate() {
-      setKState((prev) => {
-        let { x, y, color } = prev;
+      setPos((prev) => {
+        let { x, y } = prev;
         let { x: vx, y: vy } = vel;
         let { width, height } = viewport;
-        let nextX = x + vx * (isMobile() ? 1.5 : 1);
-        let nextY = y + vy * (isMobile() ? 1.5 : 1);
-        let impact = false;
+        let nextX = x + vx * (isMobile() ? 2 : 1);
+        let nextY = y + vy * (isMobile() ? 2 : 1);
         // Window edge bounce (use measured text size)
         if (nextX + bouncingSize.width >= width) {
           vx = -Math.abs(vx);
           nextX = width - bouncingSize.width;
-          impact = true;
         } else if (nextX <= 0) {
           vx = Math.abs(vx);
           nextX = 0;
-          impact = true;
         }
-        // Vertical bounds
-        let yMin = 0,
-          yMax = height;
-        if (carouselRef.current && !isMobile()) {
-          const rect = carouselRef.current.getBoundingClientRect();
-          yMin = rect.top;
-          yMax = rect.bottom;
-        }
-        if (nextY + bouncingSize.height >= yMax) {
+        if (nextY + bouncingSize.height >= height) {
           vy = -Math.abs(vy);
-          nextY = yMax - bouncingSize.height;
-          impact = true;
-        } else if (nextY <= yMin) {
+          nextY = height - bouncingSize.height;
+        } else if (nextY <= 0) {
           vy = Math.abs(vy);
-          nextY = yMin;
-          impact = true;
+          nextY = 0;
         }
         // Carousel collision (robust: bounce off closest side)
         if (carouselRef.current) {
@@ -137,44 +124,25 @@ export default function HomePage() {
               // Hit left side
               vx = -Math.abs(vx);
               nextX = cLeft - bouncingSize.width;
-              impact = true;
             } else if (minDist === distRight) {
               // Hit right side
               vx = Math.abs(vx);
               nextX = cRight;
-              impact = true;
             } else if (minDist === distTop) {
               // Hit top side
               vy = -Math.abs(vy);
               nextY = cTop - bouncingSize.height;
-              impact = true;
             } else if (minDist === distBottom) {
               // Hit bottom side
               vy = Math.abs(vy);
               nextY = cBottom;
-              impact = true;
             }
           }
         }
-        // Color change on impact (persist)
-        let newColor = color;
-        if (impact) {
-          const colors = [
-            "#ff3b3b",
-            "#3b82f6",
-            "#f59e42",
-            "#22d3ee",
-            "#a3e635",
-            "#f472b6",
-            "#fff",
-          ];
-          newColor = colors[Math.floor(Math.random() * (colors.length - 1))];
-        }
         setVel({ x: vx, y: vy });
         return {
-          x: Math.max(yMin, Math.min(nextX, width - bouncingSize.width)),
-          y: Math.max(yMin, Math.min(nextY, yMax - bouncingSize.height)),
-          color: newColor,
+          x: Math.max(0, Math.min(nextX, width - bouncingSize.width)),
+          y: Math.max(0, Math.min(nextY, height - bouncingSize.height)),
         };
       });
       animationFrame = requestAnimationFrame(animate);
@@ -184,7 +152,7 @@ export default function HomePage() {
     }
     return () => cancelAnimationFrame(animationFrame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewport, vel, bouncingSize]);
+  }, [viewport, vel]);
 
   // --- Second bouncing text (KULTJUR®) ---
   const KULTJUR_FONT_SIZE = Math.round(K_FONT_SIZE * 0.92); // 8% smaller
@@ -240,20 +208,12 @@ export default function HomePage() {
           vx = Math.abs(vx);
           nextX = 0;
         }
-        // Vertical bounds (desktop: restrict to carousel)
-        let yMin = 0,
-          yMax = height;
-        if (carouselRef.current && !isMobile()) {
-          const rect = carouselRef.current.getBoundingClientRect();
-          yMin = rect.top;
-          yMax = rect.bottom;
-        }
-        if (nextY + bouncingSize2.height >= yMax) {
+        if (nextY + bouncingSize2.height >= height) {
           vy = -Math.abs(vy);
-          nextY = yMax - bouncingSize2.height;
-        } else if (nextY <= yMin) {
+          nextY = height - bouncingSize2.height;
+        } else if (nextY <= 0) {
           vy = Math.abs(vy);
-          nextY = yMin;
+          nextY = 0;
         }
         // Carousel collision (robust: bounce off closest side)
         if (carouselRef.current) {
@@ -298,7 +258,7 @@ export default function HomePage() {
         setVel2({ x: vx, y: vy });
         return {
           x: Math.max(0, Math.min(nextX, width - bouncingSize2.width)),
-          y: Math.max(yMin, Math.min(nextY, yMax - bouncingSize2.height)),
+          y: Math.max(0, Math.min(nextY, height - bouncingSize2.height)),
         };
       });
       animationFrame = requestAnimationFrame(animate);
@@ -317,11 +277,12 @@ export default function HomePage() {
     // Sinhala: left 20% of carousel
     const leftMin = rect.left;
     const leftMax = rect.left + rect.width * 0.2;
-    const yMin = rect.top;
+    // On mobile, yMin is carousel top; on desktop, yMin is viewport top
+    const yMin = isMobile() ? rect.top : 0;
     const yMax = rect.bottom - bouncingSize.height;
     const randX = leftMin + Math.random() * (leftMax - leftMin);
     const randY = yMin + Math.random() * (yMax - yMin);
-    setKState((prev) => ({ ...prev, x: randX, y: randY }));
+    setPos({ x: randX, y: randY });
     // Random velocity, not zero
     let vx = (Math.random() - 0.5) * 1.2;
     let vy = (Math.random() - 0.5) * 1.2;
@@ -351,13 +312,15 @@ export default function HomePage() {
           rel="stylesheet"
         />
       </Head>
-      {/* Indicator: top left on desktop, bottom right on mobile */}
+      {/* Debug: Show Sinhala K position and velocity (top left) */}
       <div
-        className="fixed bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-1 text-[14px] sm:top-2 sm:left-2 sm:bottom-auto sm:right-auto bottom-2 right-2"
-        style={{ fontSize: undefined }}
+        className="fixed top-2 left-2 bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-1 sm:text-[14px] text-[11px]"
+        style={{
+          fontSize: undefined, // handled by Tailwind
+        }}
       >
         <div>
-          කල්චර්® Position: x={kState.x.toFixed(1)}, y={kState.y.toFixed(1)}
+          කල්චර්® Position: x={pos.x.toFixed(1)}, y={pos.y.toFixed(1)}
         </div>
         <div>
           කල්චර්® Velocity: vx={vel.x.toFixed(3)}, vy={vel.y.toFixed(3)}
@@ -376,16 +339,16 @@ export default function HomePage() {
       <div
         style={{
           position: "fixed",
-          left: kState.x,
-          top: kState.y,
+          left: pos.x,
+          top: pos.y,
           fontSize: K_FONT_SIZE,
           fontWeight: 400,
-          color: kState.color,
+          color: "#fff",
           userSelect: "none",
           pointerEvents: "none",
           zIndex: 9999,
           textShadow: "0 2px 8px #000, 0 0 2px #fff",
-          transition: "color 0.18s cubic-bezier(.4,0,.2,1)",
+          transition: "none",
           fontFamily: "Noto Sans Sinhala",
         }}
         ref={bouncingTextRef}
@@ -438,7 +401,7 @@ export default function HomePage() {
             <CarouselContent>
               {posters.map((src, idx) => (
                 <CarouselItem key={idx}>
-                  <div className="relative aspect-[1081/1351] w-full overflow-hidden shadow-lg mx-auto">
+                  <div className="relative aspect-[1081/1351] w-full border border-white overflow-hidden shadow-lg mx-auto">
                     <Image
                       src={src}
                       alt={`Poster ${idx + 1}`}
