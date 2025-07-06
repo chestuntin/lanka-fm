@@ -28,34 +28,6 @@ export default function HomePage() {
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const K_FONT_SIZE = 32; // px, reduced
 
-  // For debugging: visualize carousel boundaries
-  const [carouselRect, setCarouselRect] = useState<DOMRect | null>(null);
-  useEffect(() => {
-    function updateRect() {
-      if (carouselRef.current) {
-        setCarouselRect(carouselRef.current.getBoundingClientRect());
-      }
-    }
-    updateRect();
-    window.addEventListener("resize", updateRect);
-    return () => window.removeEventListener("resize", updateRect);
-  }, []);
-  // Also update on every animation frame
-  useEffect(() => {
-    let running = true;
-    function update() {
-      if (!running) return;
-      if (carouselRef.current) {
-        setCarouselRect(carouselRef.current.getBoundingClientRect());
-      }
-      requestAnimationFrame(update);
-    }
-    update();
-    return () => {
-      running = false;
-    };
-  }, []);
-
   // Update viewport size on mount and resize
   useEffect(() => {
     function updateSize() {
@@ -177,6 +149,82 @@ export default function HomePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewport, vel]);
 
+  // --- Second bouncing text (KULTJUR®) ---
+  const KULTJUR_FONT_SIZE = Math.round(K_FONT_SIZE * 0.92); // 8% smaller
+  const bouncingTextRef2 = useRef<HTMLDivElement>(null);
+  const [bouncingSize2, setBouncingSize2] = useState({ width: 48, height: 48 });
+  useEffect(() => {
+    function updateSize2() {
+      if (bouncingTextRef2.current) {
+        const rect = bouncingTextRef2.current.getBoundingClientRect();
+        setBouncingSize2({ width: rect.width, height: rect.height });
+      }
+    }
+    updateSize2();
+    window.addEventListener("resize", updateSize2);
+    return () => window.removeEventListener("resize", updateSize2);
+  }, []);
+  useEffect(() => {
+    if (!bouncingTextRef2.current) return;
+    let running = true;
+    function update() {
+      if (!running) return;
+      if (bouncingTextRef2.current) {
+        const rect = bouncingTextRef2.current.getBoundingClientRect();
+        setBouncingSize2({ width: rect.width, height: rect.height });
+      }
+      requestAnimationFrame(update);
+    }
+    update();
+    return () => {
+      running = false;
+    };
+  }, []);
+  // Start at top right
+  const [pos2, setPos2] = useState({
+    x: typeof window !== "undefined" ? window.innerWidth - 50 - 48 : 500,
+    y: 50,
+  });
+  const [vel2, setVel2] = useState({ x: -0.4, y: 0.4 });
+  useEffect(() => {
+    let animationFrame: number;
+    function animate() {
+      setPos2((prev) => {
+        let { x, y } = prev;
+        let { x: vx, y: vy } = vel2;
+        let { width, height } = viewport;
+        let nextX = x + vx;
+        let nextY = y + vy;
+        // Window edge bounce (use measured text size)
+        if (nextX + bouncingSize2.width >= width) {
+          vx = -Math.abs(vx);
+          nextX = width - bouncingSize2.width;
+        } else if (nextX <= 0) {
+          vx = Math.abs(vx);
+          nextX = 0;
+        }
+        if (nextY + bouncingSize2.height >= height) {
+          vy = -Math.abs(vy);
+          nextY = height - bouncingSize2.height;
+        } else if (nextY <= 0) {
+          vy = Math.abs(vy);
+          nextY = 0;
+        }
+        setVel2({ x: vx, y: vy });
+        return {
+          x: Math.max(0, Math.min(nextX, width - bouncingSize2.width)),
+          y: Math.max(0, Math.min(nextY, height - bouncingSize2.height)),
+        };
+      });
+      animationFrame = requestAnimationFrame(animate);
+    }
+    if (viewport.width && viewport.height) {
+      animationFrame = requestAnimationFrame(animate);
+    }
+    return () => cancelAnimationFrame(animationFrame);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [viewport, vel2, bouncingSize2]);
+
   return (
     <>
       {/* Google Fonts for Sinhala */}
@@ -186,22 +234,30 @@ export default function HomePage() {
           rel="stylesheet"
         />
       </Head>
-      {/* Debug: Carousel bounding box overlay */}
-      {carouselRect && (
-        <div
-          style={{
-            position: "fixed",
-            left: carouselRect.left,
-            top: carouselRect.top,
-            width: carouselRect.width,
-            height: carouselRect.height,
-            border: "2px solid red",
-            zIndex: 9998,
-            pointerEvents: "none",
-          }}
-        />
-      )}
-      {/* Debug: Show K position and velocity (bottom right) */}
+      {/* Debug: Show Sinhala K position and velocity (top left) */}
+      <div
+        style={{
+          position: "fixed",
+          top: 8,
+          left: 8,
+          background: "rgba(0,0,0,0.7)",
+          color: "#fff",
+          fontSize: 14,
+          padding: "6px 12px",
+          borderRadius: 8,
+          zIndex: 10000,
+          fontFamily: "monospace",
+          pointerEvents: "none",
+        }}
+      >
+        <div>
+          කල්චර්® Position: x={pos.x.toFixed(1)}, y={pos.y.toFixed(1)}
+        </div>
+        <div>
+          කල්චර්® Velocity: vx={vel.x.toFixed(3)}, vy={vel.y.toFixed(3)}
+        </div>
+      </div>
+      {/* Debug: Show English KULTJUR® position and velocity (bottom right) */}
       <div
         style={{
           position: "fixed",
@@ -218,10 +274,10 @@ export default function HomePage() {
         }}
       >
         <div>
-          K Position: x={pos.x.toFixed(1)}, y={pos.y.toFixed(1)}
+          KULTJUR® Position: x={pos2.x.toFixed(1)}, y={pos2.y.toFixed(1)}
         </div>
         <div>
-          K Velocity: vx={vel.x.toFixed(3)}, vy={vel.y.toFixed(3)}
+          KULTJUR® Velocity: vx={vel2.x.toFixed(3)}, vy={vel2.y.toFixed(3)}
         </div>
       </div>
       {/* Bouncing K in viewport */}
@@ -251,21 +307,23 @@ export default function HomePage() {
           </sup>
         </span>
       </div>
-      {/* Fixed KULTJUR® on the opposite side (top right) */}
+      {/* Bouncing KULTJUR® in viewport */}
       <div
         style={{
           position: "fixed",
-          top: 16,
-          right: 24,
-          fontSize: K_FONT_SIZE,
+          left: pos2.x,
+          top: pos2.y,
+          fontSize: KULTJUR_FONT_SIZE,
           fontWeight: 400,
           color: "#fff",
-          zIndex: 9999,
-          textShadow: "0 2px 8px #000, 0 0 2px #fff",
-          fontFamily: "Noto Sans Sinhala, sans-serif",
           userSelect: "none",
           pointerEvents: "none",
+          zIndex: 9999,
+          textShadow: "0 2px 8px #000, 0 0 2px #fff",
+          transition: "none",
+          fontFamily: "Noto Sans Sinhala",
         }}
+        ref={bouncingTextRef2}
       >
         <span>
           KULTJUR
