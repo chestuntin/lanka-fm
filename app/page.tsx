@@ -90,7 +90,7 @@ export default function HomePage() {
           vy = Math.abs(vy);
           nextY = 0;
         }
-        // Carousel collision (only bounce on the axis of collision)
+        // Carousel collision (robust: bounce off closest side)
         if (carouselRef.current) {
           const rect = carouselRef.current.getBoundingClientRect();
           const kLeft = nextX;
@@ -105,32 +105,28 @@ export default function HomePage() {
           const overlapX = kRight > cLeft && kLeft < cRight;
           const overlapY = kBottom > cTop && kTop < cBottom;
           if (overlapX && overlapY) {
-            // Determine which axis is the primary collision
-            const prevKLeft = x;
-            const prevKRight = x + K_SIZE;
-            const prevKTop = y;
-            const prevKBottom = y + K_SIZE;
-            // Horizontal collision
-            if (
-              (prevKRight <= cLeft && kRight > cLeft) ||
-              (prevKLeft >= cRight && kLeft < cRight)
-            ) {
-              vx = -vx;
-              // Move just outside horizontally
-              if (vx < 0) nextX = cRight;
-              else nextX = cLeft - K_SIZE;
-            } else if (
-              (prevKBottom <= cTop && kBottom > cTop) ||
-              (prevKTop >= cBottom && kTop < cBottom)
-            ) {
-              vy = -vy;
-              // Move just outside vertically
-              if (vy < 0) nextY = cBottom;
-              else nextY = cTop - K_SIZE;
-            } else {
-              // If ambiguous, bounce both
-              vx = -vx;
-              vy = -vy;
+            // Find the minimal distance to each side
+            const distLeft = Math.abs(kRight - cLeft);
+            const distRight = Math.abs(kLeft - cRight);
+            const distTop = Math.abs(kBottom - cTop);
+            const distBottom = Math.abs(kTop - cBottom);
+            const minDist = Math.min(distLeft, distRight, distTop, distBottom);
+            if (minDist === distLeft) {
+              // Hit left side
+              vx = -Math.abs(vx);
+              nextX = cLeft - K_SIZE;
+            } else if (minDist === distRight) {
+              // Hit right side
+              vx = Math.abs(vx);
+              nextX = cRight;
+            } else if (minDist === distTop) {
+              // Hit top side
+              vy = -Math.abs(vy);
+              nextY = cTop - K_SIZE;
+            } else if (minDist === distBottom) {
+              // Hit bottom side
+              vy = Math.abs(vy);
+              nextY = cBottom;
             }
           }
         }
@@ -185,6 +181,29 @@ export default function HomePage() {
         }}
       >
         K
+      </div>
+      {/* Debug: Show K position and velocity */}
+      <div
+        style={{
+          position: "fixed",
+          top: 8,
+          left: 8,
+          background: "rgba(0,0,0,0.7)",
+          color: "#fff",
+          fontSize: 14,
+          padding: "6px 12px",
+          borderRadius: 8,
+          zIndex: 10000,
+          fontFamily: "monospace",
+          pointerEvents: "none",
+        }}
+      >
+        <div>
+          K Position: x={pos.x.toFixed(1)}, y={pos.y.toFixed(1)}
+        </div>
+        <div>
+          K Velocity: vx={vel.x.toFixed(3)}, vy={vel.y.toFixed(3)}
+        </div>
       </div>
       <div className="flex items-center justify-center min-h-screen bg-[#09090b]">
         <div
