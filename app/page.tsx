@@ -28,11 +28,10 @@ function isMobile() {
 export default function HomePage() {
   // Bouncing K logic
   const carouselRef = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState({ x: 50, y: 50 });
+  const [kState, setKState] = useState({ x: 50, y: 50, color: "#fff" });
   const [vel, setVel] = useState({ x: 0.4, y: 0.4 }); // 5x slower
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const K_FONT_SIZE = Math.round(32 * 0.9); // 10% smaller
-  const [kColor, setKColor] = useState("#fff");
 
   // Update viewport size on mount and resize
   useEffect(() => {
@@ -79,8 +78,8 @@ export default function HomePage() {
   useEffect(() => {
     let animationFrame: number;
     function animate() {
-      setPos((prev) => {
-        let { x, y } = prev;
+      setKState((prev) => {
+        let { x, y, color } = prev;
         let { x: vx, y: vy } = vel;
         let { width, height } = viewport;
         let nextX = x + vx * (isMobile() ? 1.5 : 1);
@@ -162,6 +161,7 @@ export default function HomePage() {
           }
         }
         // Color change on impact (persist)
+        let newColor = color;
         if (impact) {
           const colors = [
             "#ff3b3b",
@@ -172,14 +172,13 @@ export default function HomePage() {
             "#f472b6",
             "#fff",
           ];
-          const newColor =
-            colors[Math.floor(Math.random() * (colors.length - 1))];
-          setKColor(newColor);
+          newColor = colors[Math.floor(Math.random() * (colors.length - 1))];
         }
         setVel({ x: vx, y: vy });
         return {
-          x: Math.max(0, Math.min(nextX, width - bouncingSize.width)),
+          x: Math.max(yMin, Math.min(nextX, width - bouncingSize.width)),
           y: Math.max(yMin, Math.min(nextY, yMax - bouncingSize.height)),
+          color: newColor,
         };
       });
       animationFrame = requestAnimationFrame(animate);
@@ -326,7 +325,7 @@ export default function HomePage() {
     const yMax = rect.bottom - bouncingSize.height;
     const randX = leftMin + Math.random() * (leftMax - leftMin);
     const randY = yMin + Math.random() * (yMax - yMin);
-    setPos({ x: randX, y: randY });
+    setKState((prev) => ({ ...prev, x: randX, y: randY }));
     // Random velocity, not zero
     let vx = (Math.random() - 0.5) * 1.2;
     let vy = (Math.random() - 0.5) * 1.2;
@@ -362,7 +361,7 @@ export default function HomePage() {
         style={{ fontSize: undefined }}
       >
         <div>
-          කල්චර්® Position: x={pos.x.toFixed(1)}, y={pos.y.toFixed(1)}
+          කල්චර්® Position: x={kState.x.toFixed(1)}, y={kState.y.toFixed(1)}
         </div>
         <div>
           කල්චර්® Velocity: vx={vel.x.toFixed(3)}, vy={vel.y.toFixed(3)}
@@ -381,11 +380,11 @@ export default function HomePage() {
       <div
         style={{
           position: "fixed",
-          left: pos.x,
-          top: pos.y,
+          left: kState.x,
+          top: kState.y,
           fontSize: K_FONT_SIZE,
           fontWeight: 400,
-          color: kColor,
+          color: kState.color,
           userSelect: "none",
           pointerEvents: "none",
           zIndex: 9999,
