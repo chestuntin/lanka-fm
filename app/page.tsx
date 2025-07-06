@@ -60,17 +60,57 @@ function VisitorCounter() {
 
   return (
     <div
-      className={`fixed bottom-4 right-4 bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-2 transition-opacity duration-1000 ${
+      className={`fixed bottom-2 left-2 bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-1 sm:text-[14px] text-[11px] transition-opacity duration-1000 ${
         isVisible ? "opacity-100" : "opacity-0"
       }`}
       style={{
-        fontSize: "12px",
-        textShadow: "0 1px 2px rgba(0,0,0,0.8)",
+        fontSize: undefined, // handled by Tailwind
       }}
     >
-      <div className="text-center">
-        <div className="text-xs opacity-75 mb-1">Visitors</div>
-        <div className="text-lg font-bold">{count.toLocaleString()}</div>
+      <div>Visitors: {count.toLocaleString()}</div>
+    </div>
+  );
+}
+
+// Control Panel Component
+function ControlPanel({
+  isFrozen,
+  setIsFrozen,
+  isHidden,
+  setIsHidden,
+}: {
+  isFrozen: boolean;
+  setIsFrozen: (frozen: boolean) => void;
+  isHidden: boolean;
+  setIsHidden: (hidden: boolean) => void;
+}) {
+  return (
+    <div className="fixed top-2 right-2 bg-black/70 text-white rounded-md z-[10000] font-mono px-3 py-2 sm:text-[14px] text-[11px]">
+      <div className="flex flex-col gap-2">
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsFrozen(!isFrozen)}
+            className={`px-2 py-1 rounded text-xs font-bold transition-colors ${
+              isFrozen
+                ? "bg-red-600 hover:bg-red-700"
+                : "bg-green-600 hover:bg-green-700"
+            }`}
+          >
+            {isFrozen ? "FROZEN" : "FREEZE"}
+          </button>
+        </div>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsHidden(!isHidden)}
+            className={`px-2 py-1 rounded text-xs font-bold transition-colors ${
+              isHidden
+                ? "bg-blue-600 hover:bg-blue-700"
+                : "bg-gray-600 hover:bg-gray-700"
+            }`}
+          >
+            {isHidden ? "SHOW" : "HIDE"}
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -78,6 +118,10 @@ function VisitorCounter() {
 
 export default function HomePage() {
   const isMobile = useIsMobile();
+  // Control states
+  const [isFrozen, setIsFrozen] = useState(false);
+  const [isHidden, setIsHidden] = useState(false);
+
   // Bouncing K logic
   const carouselRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ x: 50, y: 50 });
@@ -128,6 +172,8 @@ export default function HomePage() {
 
   // Animation loop with carousel collision
   useEffect(() => {
+    if (isFrozen) return; // Skip animation if frozen
+
     let animationFrame: number;
     function animate() {
       setPos((prev) => {
@@ -204,7 +250,7 @@ export default function HomePage() {
     }
     return () => cancelAnimationFrame(animationFrame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewport, vel]);
+  }, [viewport, vel, isFrozen]);
 
   // --- Second bouncing text (KULTJUR®) ---
   const KULTJUR_FONT_SIZE = Math.round(K_FONT_SIZE * 0.92); // 8% smaller
@@ -244,6 +290,8 @@ export default function HomePage() {
   });
   const [vel2, setVel2] = useState({ x: -0.4, y: 0.4 });
   useEffect(() => {
+    if (isFrozen) return; // Skip animation if frozen
+
     let animationFrame: number;
     function animate() {
       setPos2((prev) => {
@@ -320,7 +368,7 @@ export default function HomePage() {
     }
     return () => cancelAnimationFrame(animationFrame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewport, vel2, bouncingSize2]);
+  }, [viewport, vel2, bouncingSize2, isFrozen]);
 
   // Randomize starting position and velocity for both logos
   useEffect(() => {
@@ -369,7 +417,7 @@ export default function HomePage() {
   const lastPositions = useRef<{ x: number; y: number; t: number }[]>([]);
 
   function handleMouseDown(e: React.MouseEvent) {
-    if (isMobile) return;
+    if (isMobile || isFrozen) return;
     dragging.current = true;
     dragOffset.current = {
       x: e.clientX - pos.x,
@@ -421,6 +469,13 @@ export default function HomePage() {
           rel="stylesheet"
         />
       </Head>
+      {/* Control Panel */}
+      <ControlPanel
+        isFrozen={isFrozen}
+        setIsFrozen={setIsFrozen}
+        isHidden={isHidden}
+        setIsHidden={setIsHidden}
+      />
       {/* Debug: Show Sinhala K position and velocity (top left) */}
       <div
         className="fixed top-2 left-2 bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-1 sm:text-[14px] text-[11px]"
@@ -447,61 +502,73 @@ export default function HomePage() {
       {/* Visitor Counter */}
       <VisitorCounter />
       {/* Bouncing K in viewport */}
-      <div
-        onMouseDown={isMobile ? undefined : handleMouseDown}
-        style={{
-          cursor: !isMobile ? "grab" : "default",
-          position: "fixed",
-          left: pos.x,
-          top: pos.y,
-          fontSize: K_FONT_SIZE,
-          fontWeight: 400,
-          color: "#fff",
-          userSelect: "none",
-          zIndex: 9999,
-          textShadow: "0 2px 8px #000, 0 0 2px #fff",
-          transition: "none",
-          fontFamily: "Noto Sans Sinhala",
-        }}
-        ref={bouncingTextRef}
-      >
-        <span>
-          කල්චර්
-          <sup
-            style={{ fontSize: "0.6em", verticalAlign: "super", marginLeft: 2 }}
-          >
-            ®
-          </sup>
-        </span>
-      </div>
+      {!isHidden && (
+        <div
+          onMouseDown={isMobile ? undefined : handleMouseDown}
+          style={{
+            cursor: !isMobile && !isFrozen ? "grab" : "default",
+            position: "fixed",
+            left: pos.x,
+            top: pos.y,
+            fontSize: K_FONT_SIZE,
+            fontWeight: 400,
+            color: "#fff",
+            userSelect: "none",
+            zIndex: 9999,
+            textShadow: "0 2px 8px #000, 0 0 2px #fff",
+            transition: "none",
+            fontFamily: "Noto Sans Sinhala",
+          }}
+          ref={bouncingTextRef}
+        >
+          <span>
+            කල්චර්
+            <sup
+              style={{
+                fontSize: "0.6em",
+                verticalAlign: "super",
+                marginLeft: 2,
+              }}
+            >
+              ®
+            </sup>
+          </span>
+        </div>
+      )}
       {/* Bouncing KULTJUR® in viewport (hidden on mobile) */}
-      <div
-        className="hidden sm:block"
-        style={{
-          position: "fixed",
-          left: pos2.x,
-          top: pos2.y,
-          fontSize: KULTJUR_FONT_SIZE,
-          fontWeight: 400,
-          color: "#fff",
-          userSelect: "none",
-          pointerEvents: "none",
-          zIndex: 9999,
-          textShadow: "0 2px 8px #000, 0 0 2px #fff",
-          transition: "none",
-          fontFamily: "Noto Sans Sinhala",
-        }}
-        ref={bouncingTextRef2}
-      >
-        <span>
-          KULTJUR
-          <sup
-            style={{ fontSize: "0.6em", verticalAlign: "super", marginLeft: 2 }}
-          >
-            ®
-          </sup>
-        </span>
-      </div>
+      {!isHidden && (
+        <div
+          className="hidden sm:block"
+          style={{
+            position: "fixed",
+            left: pos2.x,
+            top: pos2.y,
+            fontSize: KULTJUR_FONT_SIZE,
+            fontWeight: 400,
+            color: "#fff",
+            userSelect: "none",
+            pointerEvents: "none",
+            zIndex: 9999,
+            textShadow: "0 2px 8px #000, 0 0 2px #fff",
+            transition: "none",
+            fontFamily: "Noto Sans Sinhala",
+          }}
+          ref={bouncingTextRef2}
+        >
+          <span>
+            KULTJUR
+            <sup
+              style={{
+                fontSize: "0.6em",
+                verticalAlign: "super",
+                marginLeft: 2,
+              }}
+            >
+              ®
+            </sup>
+          </span>
+        </div>
+      )}
       <div className="flex items-center justify-center min-h-screen bg-[#09090b]">
         <div
           className="relative w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl mx-auto"
