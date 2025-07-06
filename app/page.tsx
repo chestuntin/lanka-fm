@@ -307,18 +307,9 @@ export default function HomePage() {
       </Head>
       {/* Debug: Show Sinhala K position and velocity (top left) */}
       <div
+        className="fixed top-2 left-2 bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-1 sm:text-[14px] text-[11px]"
         style={{
-          position: "fixed",
-          top: 8,
-          left: 8,
-          background: "rgba(0,0,0,0.7)",
-          color: "#fff",
-          fontSize: 14,
-          padding: "6px 12px",
-          borderRadius: 8,
-          zIndex: 10000,
-          fontFamily: "monospace",
-          pointerEvents: "none",
+          fontSize: undefined, // handled by Tailwind
         }}
       >
         <div>
@@ -329,21 +320,7 @@ export default function HomePage() {
         </div>
       </div>
       {/* Debug: Show English KULTJUR® position and velocity (bottom right) */}
-      <div
-        style={{
-          position: "fixed",
-          bottom: 8,
-          right: 8,
-          background: "rgba(0,0,0,0.7)",
-          color: "#fff",
-          fontSize: 14,
-          padding: "6px 12px",
-          borderRadius: 8,
-          zIndex: 10000,
-          fontFamily: "monospace",
-          pointerEvents: "none",
-        }}
-      >
+      <div className="fixed bottom-2 right-2 bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-1 sm:text-[14px] text-[11px] hidden sm:block">
         <div>
           KULTJUR® Position: x={pos2.x.toFixed(1)}, y={pos2.y.toFixed(1)}
         </div>
@@ -378,8 +355,9 @@ export default function HomePage() {
           </sup>
         </span>
       </div>
-      {/* Bouncing KULTJUR® in viewport */}
+      {/* Bouncing KULTJUR® in viewport (hidden on mobile) */}
       <div
+        className="hidden sm:block"
         style={{
           position: "fixed",
           left: pos2.x,
