@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/carousel";
 import Autoplay from "embla-carousel-autoplay";
 import { useRef, useEffect, useState } from "react";
+import Head from "next/head";
 
 const posters = [
   "/posters-homepage/poster-1.png",
@@ -147,6 +148,13 @@ export default function HomePage() {
 
   return (
     <>
+      {/* Google Fonts for Sinhala */}
+      <Head>
+        <link
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@700&display=swap"
+          rel="stylesheet"
+        />
+      </Head>
       {/* Debug: Carousel bounding box overlay */}
       {carouselRect && (
         <div
@@ -162,32 +170,12 @@ export default function HomePage() {
           }}
         />
       )}
-      {/* Bouncing K in viewport */}
+      {/* Debug: Show K position and velocity (bottom right) */}
       <div
         style={{
           position: "fixed",
-          left: pos.x,
-          top: pos.y,
-          width: K_SIZE,
-          height: K_SIZE,
-          fontSize: K_SIZE,
-          fontWeight: "bold",
-          color: "#fff",
-          userSelect: "none",
-          pointerEvents: "none",
-          zIndex: 9999,
-          textShadow: "0 2px 8px #000, 0 0 2px #fff",
-          transition: "none",
-        }}
-      >
-        K
-      </div>
-      {/* Debug: Show K position and velocity */}
-      <div
-        style={{
-          position: "fixed",
-          top: 8,
-          left: 8,
+          bottom: 8,
+          right: 8,
           background: "rgba(0,0,0,0.7)",
           color: "#fff",
           fontSize: 14,
@@ -204,6 +192,45 @@ export default function HomePage() {
         <div>
           K Velocity: vx={vel.x.toFixed(3)}, vy={vel.y.toFixed(3)}
         </div>
+      </div>
+      {/* Bouncing K in viewport */}
+      <div
+        style={{
+          position: "fixed",
+          left: pos.x,
+          top: pos.y,
+          width: K_SIZE,
+          height: K_SIZE,
+          fontSize: K_SIZE,
+          fontWeight: 700,
+          color: "#fff",
+          userSelect: "none",
+          pointerEvents: "none",
+          zIndex: 9999,
+          textShadow: "0 2px 8px #000, 0 0 2px #fff",
+          transition: "none",
+          fontFamily: "Noto Sans Sinhala",
+        }}
+      >
+        කල්චර්®
+      </div>
+      {/* Fixed KULTJUR® on the opposite side (top right) */}
+      <div
+        style={{
+          position: "fixed",
+          top: 16,
+          right: 24,
+          fontSize: K_SIZE,
+          fontWeight: 700,
+          color: "#fff",
+          zIndex: 9999,
+          textShadow: "0 2px 8px #000, 0 0 2px #fff",
+          fontFamily: "Noto Sans Sinhala, sans-serif",
+          userSelect: "none",
+          pointerEvents: "none",
+        }}
+      >
+        KULTJUR®
       </div>
       <div className="flex items-center justify-center min-h-screen bg-[#09090b]">
         <div
