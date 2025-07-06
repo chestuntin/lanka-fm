@@ -10,6 +10,7 @@ import {
 import { Toggle } from "@/components/ui/toggle";
 import { useRef, useEffect, useState } from "react";
 import Head from "next/head";
+import { Snowflake, Eye, EyeOff } from "lucide-react";
 
 const posters = [
   "/posters-homepage/poster-1.png",
@@ -93,15 +94,19 @@ function ControlPanel({
         variant="outline"
         aria-label="Freeze logos"
       >
-        {isFrozen ? "Frozen" : "Freeze"}
+        <Snowflake className="h-4 w-4" />
       </Toggle>
       <Toggle
         pressed={isHidden}
         onPressedChange={setIsHidden}
         variant="outline"
-        aria-label="Hide logos"
+        aria-label={isHidden ? "Show logos" : "Hide logos"}
       >
-        {isHidden ? "Show" : "Hide"}
+        {isHidden ? (
+          <Eye className="h-4 w-4" />
+        ) : (
+          <EyeOff className="h-4 w-4" />
+        )}
       </Toggle>
     </div>
   );
