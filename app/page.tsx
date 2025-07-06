@@ -33,9 +33,6 @@ export default function HomePage() {
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const K_FONT_SIZE = Math.round(32 * 0.9); // 10% smaller
   const [kColor, setKColor] = useState("#fff");
-  const [kColorTimeout, setKColorTimeout] = useState<NodeJS.Timeout | null>(
-    null
-  );
 
   // Update viewport size on mount and resize
   useEffect(() => {
@@ -158,9 +155,8 @@ export default function HomePage() {
             }
           }
         }
-        // Color change on impact
+        // Color change on impact (persist)
         if (impact) {
-          if (kColorTimeout) clearTimeout(kColorTimeout);
           const colors = [
             "#ff3b3b",
             "#3b82f6",
@@ -173,7 +169,6 @@ export default function HomePage() {
           const newColor =
             colors[Math.floor(Math.random() * (colors.length - 1))];
           setKColor(newColor);
-          setKColorTimeout(setTimeout(() => setKColor("#fff"), 180));
         }
         setVel({ x: vx, y: vy });
         return {
@@ -188,7 +183,7 @@ export default function HomePage() {
     }
     return () => cancelAnimationFrame(animationFrame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewport, vel, kColorTimeout]);
+  }, [viewport, vel, bouncingSize]);
 
   // --- Second bouncing text (KULTJUR®) ---
   const KULTJUR_FONT_SIZE = Math.round(K_FONT_SIZE * 0.92); // 8% smaller
@@ -347,9 +342,9 @@ export default function HomePage() {
           rel="stylesheet"
         />
       </Head>
-      {/* Debug: Show Sinhala K position and velocity (top left) */}
+      {/* Indicator: top left on desktop, bottom right on mobile */}
       <div
-        className="fixed bottom-2 right-2 bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-1 sm:text-[14px] text-[8.5px]"
+        className="fixed bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-1 text-[14px] sm:top-2 sm:left-2 sm:bottom-auto sm:right-auto bottom-2 right-2"
         style={{ fontSize: undefined }}
       >
         <div>
