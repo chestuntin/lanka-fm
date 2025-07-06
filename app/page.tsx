@@ -27,6 +27,7 @@ export default function HomePage() {
   const [vel, setVel] = useState({ x: 0.4, y: 0.4 }); // 5x slower
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const K_FONT_SIZE = 32; // px, reduced
+  const KULTJUR_FONT_SIZE = Math.round(K_FONT_SIZE * 0.92); // 8% smaller
 
   // For debugging: visualize carousel boundaries
   const [carouselRect, setCarouselRect] = useState<DOMRect | null>(null);
@@ -42,6 +43,7 @@ export default function HomePage() {
   }, []);
   // Also update on every animation frame
   useEffect(() => {
+    if (!carouselRef.current) return;
     let running = true;
     function update() {
       if (!running) return;
@@ -107,10 +109,15 @@ export default function HomePage() {
         let { width, height } = viewport;
         let nextX = x + vx;
         let nextY = y + vy;
+        // Restrict to left of carousel
+        let rightBound = width;
+        if (carouselRect) {
+          rightBound = Math.max(0, carouselRect.left);
+        }
         // Window edge bounce (use measured text size)
-        if (nextX + bouncingSize.width >= width) {
+        if (nextX + bouncingSize.width >= rightBound) {
           vx = -Math.abs(vx);
-          nextX = width - bouncingSize.width;
+          nextX = rightBound - bouncingSize.width;
         } else if (nextX <= 0) {
           vx = Math.abs(vx);
           nextX = 0;
@@ -123,48 +130,25 @@ export default function HomePage() {
           nextY = 0;
         }
         // Carousel collision (robust: bounce off closest side)
-        if (carouselRef.current) {
-          const rect = carouselRef.current.getBoundingClientRect();
-          const kLeft = nextX;
-          const kRight = nextX + bouncingSize.width;
+        // Only check vertical collision with carousel (so it doesn't overlap vertically)
+        if (carouselRect) {
+          const cTop = carouselRect.top;
+          const cBottom = carouselRect.bottom;
           const kTop = nextY;
           const kBottom = nextY + bouncingSize.height;
-          const cLeft = rect.left;
-          const cRight = rect.right;
-          const cTop = rect.top;
-          const cBottom = rect.bottom;
-          // Check for overlap
-          const overlapX = kRight > cLeft && kLeft < cRight;
-          const overlapY = kBottom > cTop && kTop < cBottom;
-          if (overlapX && overlapY) {
-            // Find the minimal distance to each side
-            const distLeft = Math.abs(kRight - cLeft);
-            const distRight = Math.abs(kLeft - cRight);
-            const distTop = Math.abs(kBottom - cTop);
-            const distBottom = Math.abs(kTop - cBottom);
-            const minDist = Math.min(distLeft, distRight, distTop, distBottom);
-            if (minDist === distLeft) {
-              // Hit left side
-              vx = -Math.abs(vx);
-              nextX = cLeft - bouncingSize.width;
-            } else if (minDist === distRight) {
-              // Hit right side
-              vx = Math.abs(vx);
-              nextX = cRight;
-            } else if (minDist === distTop) {
-              // Hit top side
-              vy = -Math.abs(vy);
-              nextY = cTop - bouncingSize.height;
-            } else if (minDist === distBottom) {
-              // Hit bottom side
-              vy = Math.abs(vy);
-              nextY = cBottom;
-            }
+          // If the K overlaps vertically with the carousel, bounce
+          if (
+            kBottom > cTop &&
+            kTop < cBottom &&
+            nextX + bouncingSize.width >= rightBound - 2
+          ) {
+            vx = -Math.abs(vx);
+            nextX = rightBound - bouncingSize.width;
           }
         }
         setVel({ x: vx, y: vy });
         return {
-          x: Math.max(0, Math.min(nextX, width - bouncingSize.width)),
+          x: Math.max(0, Math.min(nextX, rightBound - bouncingSize.width)),
           y: Math.max(0, Math.min(nextY, height - bouncingSize.height)),
         };
       });
@@ -175,7 +159,7 @@ export default function HomePage() {
     }
     return () => cancelAnimationFrame(animationFrame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewport, vel]);
+  }, [viewport, vel, carouselRect, bouncingSize]);
 
   // --- Second bouncing text (KULTJUR®) ---
   const bouncingTextRef2 = useRef<HTMLDivElement>(null);
@@ -219,13 +203,18 @@ export default function HomePage() {
         let { width, height } = viewport;
         let nextX = x + vx;
         let nextY = y + vy;
+        // Restrict to right of carousel
+        let leftBound = 0;
+        if (carouselRect) {
+          leftBound = Math.min(width, carouselRect.right);
+        }
         // Window edge bounce (use measured text size)
         if (nextX + bouncingSize2.width >= width) {
           vx = -Math.abs(vx);
           nextX = width - bouncingSize2.width;
-        } else if (nextX <= 0) {
+        } else if (nextX <= leftBound) {
           vx = Math.abs(vx);
-          nextX = 0;
+          nextX = leftBound;
         }
         if (nextY + bouncingSize2.height >= height) {
           vy = -Math.abs(vy);
@@ -235,44 +224,21 @@ export default function HomePage() {
           nextY = 0;
         }
         // Carousel collision (robust: bounce off closest side)
-        if (carouselRef.current) {
-          const rect = carouselRef.current.getBoundingClientRect();
-          const kLeft = nextX;
-          const kRight = nextX + bouncingSize2.width;
+        // Only check vertical collision with carousel (so it doesn't overlap vertically)
+        if (carouselRect) {
+          const cTop = carouselRect.top;
+          const cBottom = carouselRect.bottom;
           const kTop = nextY;
           const kBottom = nextY + bouncingSize2.height;
-          const cLeft = rect.left;
-          const cRight = rect.right;
-          const cTop = rect.top;
-          const cBottom = rect.bottom;
-          // Check for overlap
-          const overlapX = kRight > cLeft && kLeft < cRight;
-          const overlapY = kBottom > cTop && kTop < cBottom;
-          if (overlapX && overlapY) {
-            // Find the minimal distance to each side
-            const distLeft = Math.abs(kRight - cLeft);
-            const distRight = Math.abs(kLeft - cRight);
-            const distTop = Math.abs(kBottom - cTop);
-            const distBottom = Math.abs(kTop - cBottom);
-            const minDist = Math.min(distLeft, distRight, distTop, distBottom);
-            if (minDist === distLeft) {
-              vx = -Math.abs(vx);
-              nextX = cLeft - bouncingSize2.width;
-            } else if (minDist === distRight) {
-              vx = Math.abs(vx);
-              nextX = cRight;
-            } else if (minDist === distTop) {
-              vy = -Math.abs(vy);
-              nextY = cTop - bouncingSize2.height;
-            } else if (minDist === distBottom) {
-              vy = Math.abs(vy);
-              nextY = cBottom;
-            }
+          // If the K overlaps vertically with the carousel, bounce
+          if (kBottom > cTop && kTop < cBottom && nextX <= leftBound + 2) {
+            vx = Math.abs(vx);
+            nextX = leftBound;
           }
         }
         setVel2({ x: vx, y: vy });
         return {
-          x: Math.max(0, Math.min(nextX, width - bouncingSize2.width)),
+          x: Math.max(leftBound, Math.min(nextX, width - bouncingSize2.width)),
           y: Math.max(0, Math.min(nextY, height - bouncingSize2.height)),
         };
       });
@@ -283,7 +249,7 @@ export default function HomePage() {
     }
     return () => cancelAnimationFrame(animationFrame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewport, vel2]);
+  }, [viewport, vel2, carouselRect, bouncingSize2]);
 
   return (
     <>
@@ -353,7 +319,7 @@ export default function HomePage() {
           position: "fixed",
           left: pos2.x,
           top: pos2.y,
-          fontSize: K_FONT_SIZE,
+          fontSize: KULTJUR_FONT_SIZE,
           fontWeight: 400,
           color: "#fff",
           opacity: 0.35,
