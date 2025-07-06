@@ -277,8 +277,8 @@ export default function HomePage() {
     // Sinhala: left 20% of carousel
     const leftMin = rect.left;
     const leftMax = rect.left + rect.width * 0.2;
-    // On mobile, yMin is carousel top; on desktop, yMin is viewport top
-    const yMin = isMobile() ? rect.top : 0;
+    // On desktop, yMin is carousel top; on mobile, yMin is viewport top
+    const yMin = isMobile() ? 0 : rect.top;
     const yMax = rect.bottom - bouncingSize.height;
     const randX = leftMin + Math.random() * (leftMax - leftMin);
     const randY = yMin + Math.random() * (yMax - yMin);
