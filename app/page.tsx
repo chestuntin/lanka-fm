@@ -27,6 +27,48 @@ export default function HomePage() {
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const K_FONT_SIZE = Math.round(32 * 0.9); // 10% smaller
 
+  // Refs for indicator bounding boxes
+  const sinhalaIndicatorRef = useRef<HTMLDivElement>(null);
+  const englishIndicatorRef = useRef<HTMLDivElement>(null);
+  const [sinhalaIndicatorRect, setSinhalaIndicatorRect] =
+    useState<DOMRect | null>(null);
+  const [englishIndicatorRect, setEnglishIndicatorRect] =
+    useState<DOMRect | null>(null);
+  useEffect(() => {
+    function updateRects() {
+      if (sinhalaIndicatorRef.current)
+        setSinhalaIndicatorRect(
+          sinhalaIndicatorRef.current.getBoundingClientRect()
+        );
+      if (englishIndicatorRef.current)
+        setEnglishIndicatorRect(
+          englishIndicatorRef.current.getBoundingClientRect()
+        );
+    }
+    updateRects();
+    window.addEventListener("resize", updateRects);
+    return () => window.removeEventListener("resize", updateRects);
+  }, []);
+  useEffect(() => {
+    let running = true;
+    function update() {
+      if (!running) return;
+      if (sinhalaIndicatorRef.current)
+        setSinhalaIndicatorRect(
+          sinhalaIndicatorRef.current.getBoundingClientRect()
+        );
+      if (englishIndicatorRef.current)
+        setEnglishIndicatorRect(
+          englishIndicatorRef.current.getBoundingClientRect()
+        );
+      requestAnimationFrame(update);
+    }
+    update();
+    return () => {
+      running = false;
+    };
+  }, []);
+
   // Update viewport size on mount and resize
   useEffect(() => {
     function updateSize() {
@@ -133,6 +175,39 @@ export default function HomePage() {
             }
           }
         }
+        // Indicator collision (Sinhala should bounce off English indicator, and vice versa)
+        if (englishIndicatorRect) {
+          const kLeft = nextX;
+          const kRight = nextX + bouncingSize.width;
+          const kTop = nextY;
+          const kBottom = nextY + bouncingSize.height;
+          const iLeft = englishIndicatorRect.left;
+          const iRight = englishIndicatorRect.right;
+          const iTop = englishIndicatorRect.top;
+          const iBottom = englishIndicatorRect.bottom;
+          const overlapX = kRight > iLeft && kLeft < iRight;
+          const overlapY = kBottom > iTop && kTop < iBottom;
+          if (overlapX && overlapY) {
+            const distLeft = Math.abs(kRight - iLeft);
+            const distRight = Math.abs(kLeft - iRight);
+            const distTop = Math.abs(kBottom - iTop);
+            const distBottom = Math.abs(kTop - iBottom);
+            const minDist = Math.min(distLeft, distRight, distTop, distBottom);
+            if (minDist === distLeft) {
+              vx = -Math.abs(vx);
+              nextX = iLeft - bouncingSize.width;
+            } else if (minDist === distRight) {
+              vx = Math.abs(vx);
+              nextX = iRight;
+            } else if (minDist === distTop) {
+              vy = -Math.abs(vy);
+              nextY = iTop - bouncingSize.height;
+            } else if (minDist === distBottom) {
+              vy = Math.abs(vy);
+              nextY = iBottom;
+            }
+          }
+        }
         setVel({ x: vx, y: vy });
         return {
           x: Math.max(0, Math.min(nextX, width - bouncingSize.width)),
@@ -146,7 +221,7 @@ export default function HomePage() {
     }
     return () => cancelAnimationFrame(animationFrame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewport, vel]);
+  }, [viewport, vel, englishIndicatorRect, bouncingSize]);
 
   // --- Second bouncing text (KULTJUR®) ---
   const KULTJUR_FONT_SIZE = Math.round(K_FONT_SIZE * 0.92); // 8% smaller
@@ -249,6 +324,39 @@ export default function HomePage() {
             }
           }
         }
+        // Indicator collision (English should bounce off Sinhala indicator, and vice versa)
+        if (sinhalaIndicatorRect) {
+          const kLeft = nextX;
+          const kRight = nextX + bouncingSize2.width;
+          const kTop = nextY;
+          const kBottom = nextY + bouncingSize2.height;
+          const iLeft = sinhalaIndicatorRect.left;
+          const iRight = sinhalaIndicatorRect.right;
+          const iTop = sinhalaIndicatorRect.top;
+          const iBottom = sinhalaIndicatorRect.bottom;
+          const overlapX = kRight > iLeft && kLeft < iRight;
+          const overlapY = kBottom > iTop && kTop < iBottom;
+          if (overlapX && overlapY) {
+            const distLeft = Math.abs(kRight - iLeft);
+            const distRight = Math.abs(kLeft - iRight);
+            const distTop = Math.abs(kBottom - iTop);
+            const distBottom = Math.abs(kTop - iBottom);
+            const minDist = Math.min(distLeft, distRight, distTop, distBottom);
+            if (minDist === distLeft) {
+              vx = -Math.abs(vx);
+              nextX = iLeft - bouncingSize2.width;
+            } else if (minDist === distRight) {
+              vx = Math.abs(vx);
+              nextX = iRight;
+            } else if (minDist === distTop) {
+              vy = -Math.abs(vy);
+              nextY = iTop - bouncingSize2.height;
+            } else if (minDist === distBottom) {
+              vy = Math.abs(vy);
+              nextY = iBottom;
+            }
+          }
+        }
         setVel2({ x: vx, y: vy });
         return {
           x: Math.max(0, Math.min(nextX, width - bouncingSize2.width)),
@@ -262,7 +370,7 @@ export default function HomePage() {
     }
     return () => cancelAnimationFrame(animationFrame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewport, vel2, bouncingSize2]);
+  }, [viewport, vel2, bouncingSize2, sinhalaIndicatorRect]);
 
   // Utility to detect mobile
   function isMobile() {
@@ -321,6 +429,7 @@ export default function HomePage() {
       </Head>
       {/* Debug: Show Sinhala K position and velocity (top left) */}
       <div
+        ref={sinhalaIndicatorRef}
         className="fixed top-2 left-2 bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-1 sm:text-[14px] text-[11px]"
         style={{
           fontSize: undefined, // handled by Tailwind
@@ -334,7 +443,10 @@ export default function HomePage() {
         </div>
       </div>
       {/* Debug: Show English KULTJUR® position and velocity (bottom right) */}
-      <div className="fixed bottom-2 right-2 bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-1 sm:text-[14px] text-[11px] hidden sm:block">
+      <div
+        ref={englishIndicatorRef}
+        className="fixed bottom-2 right-2 bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-1 sm:text-[14px] text-[11px] hidden sm:block"
+      >
         <div>
           KULTJUR® Position: x={pos2.x.toFixed(1)}, y={pos2.y.toFixed(1)}
         </div>
