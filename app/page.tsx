@@ -96,19 +96,25 @@ export default function HomePage() {
           nextX = 0;
           impact = true;
         }
-        // On mobile, cap y so it never goes below the top border of the carousel
-        let yMax = height;
-        if (isMobile() && carouselRef.current) {
+        // Vertical bounds
+        let yMin = 0,
+          yMax = height;
+        if (carouselRef.current) {
           const rect = carouselRef.current.getBoundingClientRect();
-          yMax = rect.top - 8; // 8px margin above carousel
+          if (isMobile()) {
+            yMax = rect.top - 8; // mobile: above carousel
+          } else {
+            yMin = rect.top;
+            yMax = rect.bottom;
+          }
         }
         if (nextY + bouncingSize.height >= yMax) {
           vy = -Math.abs(vy);
           nextY = yMax - bouncingSize.height;
           impact = true;
-        } else if (nextY <= 0) {
+        } else if (nextY <= yMin) {
           vy = Math.abs(vy);
-          nextY = 0;
+          nextY = yMin;
           impact = true;
         }
         // Carousel collision (robust: bounce off closest side)
@@ -173,7 +179,7 @@ export default function HomePage() {
         setVel({ x: vx, y: vy });
         return {
           x: Math.max(0, Math.min(nextX, width - bouncingSize.width)),
-          y: Math.max(0, Math.min(nextY, yMax - bouncingSize.height)),
+          y: Math.max(yMin, Math.min(nextY, yMax - bouncingSize.height)),
         };
       });
       animationFrame = requestAnimationFrame(animate);
@@ -239,12 +245,20 @@ export default function HomePage() {
           vx = Math.abs(vx);
           nextX = 0;
         }
-        if (nextY + bouncingSize2.height >= height) {
+        // Vertical bounds (desktop: restrict to carousel)
+        let yMin = 0,
+          yMax = height;
+        if (carouselRef.current && !isMobile()) {
+          const rect = carouselRef.current.getBoundingClientRect();
+          yMin = rect.top;
+          yMax = rect.bottom;
+        }
+        if (nextY + bouncingSize2.height >= yMax) {
           vy = -Math.abs(vy);
-          nextY = height - bouncingSize2.height;
-        } else if (nextY <= 0) {
+          nextY = yMax - bouncingSize2.height;
+        } else if (nextY <= yMin) {
           vy = Math.abs(vy);
-          nextY = 0;
+          nextY = yMin;
         }
         // Carousel collision (robust: bounce off closest side)
         if (carouselRef.current) {
@@ -289,7 +303,7 @@ export default function HomePage() {
         setVel2({ x: vx, y: vy });
         return {
           x: Math.max(0, Math.min(nextX, width - bouncingSize2.width)),
-          y: Math.max(0, Math.min(nextY, height - bouncingSize2.height)),
+          y: Math.max(yMin, Math.min(nextY, yMax - bouncingSize2.height)),
         };
       });
       animationFrame = requestAnimationFrame(animate);
