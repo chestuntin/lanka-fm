@@ -98,14 +98,10 @@ export default function HomePage() {
         // Vertical bounds
         let yMin = 0,
           yMax = height;
-        if (carouselRef.current) {
+        if (carouselRef.current && !isMobile()) {
           const rect = carouselRef.current.getBoundingClientRect();
-          if (isMobile()) {
-            yMax = rect.top - 8; // mobile: above carousel
-          } else {
-            yMin = rect.top;
-            yMax = rect.bottom;
-          }
+          yMin = rect.top;
+          yMax = rect.bottom;
         }
         if (nextY + bouncingSize.height >= yMax) {
           vy = -Math.abs(vy);
