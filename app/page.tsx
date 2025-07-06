@@ -26,7 +26,7 @@ export default function HomePage() {
   const [pos, setPos] = useState({ x: 50, y: 50 });
   const [vel, setVel] = useState({ x: 0.4, y: 0.4 }); // 5x slower
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
-  const K_SIZE = 48; // px
+  const K_FONT_SIZE = 32; // px, reduced
 
   // For debugging: visualize carousel boundaries
   const [carouselRect, setCarouselRect] = useState<DOMRect | null>(null);
@@ -66,6 +66,37 @@ export default function HomePage() {
     return () => window.removeEventListener("resize", updateSize);
   }, []);
 
+  // Bouncing text size measurement
+  const bouncingTextRef = useRef<HTMLDivElement>(null);
+  const [bouncingSize, setBouncingSize] = useState({ width: 48, height: 48 });
+  useEffect(() => {
+    function updateSize() {
+      if (bouncingTextRef.current) {
+        const rect = bouncingTextRef.current.getBoundingClientRect();
+        setBouncingSize({ width: rect.width, height: rect.height });
+      }
+    }
+    updateSize();
+    window.addEventListener("resize", updateSize);
+    return () => window.removeEventListener("resize", updateSize);
+  }, []);
+  useEffect(() => {
+    if (!bouncingTextRef.current) return;
+    let running = true;
+    function update() {
+      if (!running) return;
+      if (bouncingTextRef.current) {
+        const rect = bouncingTextRef.current.getBoundingClientRect();
+        setBouncingSize({ width: rect.width, height: rect.height });
+      }
+      requestAnimationFrame(update);
+    }
+    update();
+    return () => {
+      running = false;
+    };
+  }, []);
+
   // Animation loop with carousel collision
   useEffect(() => {
     let animationFrame: number;
@@ -76,17 +107,17 @@ export default function HomePage() {
         let { width, height } = viewport;
         let nextX = x + vx;
         let nextY = y + vy;
-        // Window edge bounce
-        if (nextX + K_SIZE >= width) {
+        // Window edge bounce (use measured text size)
+        if (nextX + bouncingSize.width >= width) {
           vx = -Math.abs(vx);
-          nextX = width - K_SIZE;
+          nextX = width - bouncingSize.width;
         } else if (nextX <= 0) {
           vx = Math.abs(vx);
           nextX = 0;
         }
-        if (nextY + K_SIZE >= height) {
+        if (nextY + bouncingSize.height >= height) {
           vy = -Math.abs(vy);
-          nextY = height - K_SIZE;
+          nextY = height - bouncingSize.height;
         } else if (nextY <= 0) {
           vy = Math.abs(vy);
           nextY = 0;
@@ -95,9 +126,9 @@ export default function HomePage() {
         if (carouselRef.current) {
           const rect = carouselRef.current.getBoundingClientRect();
           const kLeft = nextX;
-          const kRight = nextX + K_SIZE;
+          const kRight = nextX + bouncingSize.width;
           const kTop = nextY;
-          const kBottom = nextY + K_SIZE;
+          const kBottom = nextY + bouncingSize.height;
           const cLeft = rect.left;
           const cRight = rect.right;
           const cTop = rect.top;
@@ -115,7 +146,7 @@ export default function HomePage() {
             if (minDist === distLeft) {
               // Hit left side
               vx = -Math.abs(vx);
-              nextX = cLeft - K_SIZE;
+              nextX = cLeft - bouncingSize.width;
             } else if (minDist === distRight) {
               // Hit right side
               vx = Math.abs(vx);
@@ -123,7 +154,7 @@ export default function HomePage() {
             } else if (minDist === distTop) {
               // Hit top side
               vy = -Math.abs(vy);
-              nextY = cTop - K_SIZE;
+              nextY = cTop - bouncingSize.height;
             } else if (minDist === distBottom) {
               // Hit bottom side
               vy = Math.abs(vy);
@@ -133,8 +164,8 @@ export default function HomePage() {
         }
         setVel({ x: vx, y: vy });
         return {
-          x: Math.max(0, Math.min(nextX, width - K_SIZE)),
-          y: Math.max(0, Math.min(nextY, height - K_SIZE)),
+          x: Math.max(0, Math.min(nextX, width - bouncingSize.width)),
+          y: Math.max(0, Math.min(nextY, height - bouncingSize.height)),
         };
       });
       animationFrame = requestAnimationFrame(animate);
@@ -199,10 +230,8 @@ export default function HomePage() {
           position: "fixed",
           left: pos.x,
           top: pos.y,
-          width: K_SIZE,
-          height: K_SIZE,
-          fontSize: K_SIZE,
-          fontWeight: 700,
+          fontSize: K_FONT_SIZE,
+          fontWeight: 400,
           color: "#fff",
           userSelect: "none",
           pointerEvents: "none",
@@ -211,8 +240,16 @@ export default function HomePage() {
           transition: "none",
           fontFamily: "Noto Sans Sinhala",
         }}
+        ref={bouncingTextRef}
       >
-        කල්චර්®
+        <span>
+          කල්චර්
+          <sup
+            style={{ fontSize: "0.6em", verticalAlign: "super", marginLeft: 2 }}
+          >
+            ®
+          </sup>
+        </span>
       </div>
       {/* Fixed KULTJUR® on the opposite side (top right) */}
       <div
@@ -220,8 +257,8 @@ export default function HomePage() {
           position: "fixed",
           top: 16,
           right: 24,
-          fontSize: K_SIZE,
-          fontWeight: 700,
+          fontSize: K_FONT_SIZE,
+          fontWeight: 400,
           color: "#fff",
           zIndex: 9999,
           textShadow: "0 2px 8px #000, 0 0 2px #fff",
@@ -230,7 +267,14 @@ export default function HomePage() {
           pointerEvents: "none",
         }}
       >
-        KULTJUR®
+        <span>
+          KULTJUR
+          <sup
+            style={{ fontSize: "0.6em", verticalAlign: "super", marginLeft: 2 }}
+          >
+            ®
+          </sup>
+        </span>
       </div>
       <div className="flex items-center justify-center min-h-screen bg-[#09090b]">
         <div
