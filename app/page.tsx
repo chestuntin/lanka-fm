@@ -45,70 +45,65 @@ export default function HomePage() {
         let { x, y } = prev;
         let { x: vx, y: vy } = vel;
         let { width, height } = viewport;
-        // Window edge bounce
         let nextX = x + vx;
         let nextY = y + vy;
-        let bouncedX = false;
-        let bouncedY = false;
-        if (nextX + K_SIZE >= width || nextX <= 0) {
-          vx = -vx;
-          bouncedX = true;
+        // Window edge bounce
+        if (nextX + K_SIZE >= width) {
+          vx = -Math.abs(vx);
+          nextX = width - K_SIZE;
+        } else if (nextX <= 0) {
+          vx = Math.abs(vx);
+          nextX = 0;
         }
-        if (nextY + K_SIZE >= height || nextY <= 0) {
-          vy = -vy;
-          bouncedY = true;
+        if (nextY + K_SIZE >= height) {
+          vy = -Math.abs(vy);
+          nextY = height - K_SIZE;
+        } else if (nextY <= 0) {
+          vy = Math.abs(vy);
+          nextY = 0;
         }
-        // Carousel collision
+        // Carousel collision (only bounce on the axis of collision)
         if (carouselRef.current) {
           const rect = carouselRef.current.getBoundingClientRect();
-          // K's next bounding box
           const kLeft = nextX;
           const kRight = nextX + K_SIZE;
           const kTop = nextY;
           const kBottom = nextY + K_SIZE;
-          // Carousel bounding box (relative to viewport)
           const cLeft = rect.left;
           const cRight = rect.right;
           const cTop = rect.top;
           const cBottom = rect.bottom;
-          // Check horizontal collision
-          if (
-            kRight > cLeft &&
-            kLeft < cRight &&
-            kBottom > cTop &&
-            kTop < cBottom
-          ) {
-            // Determine which side is hit (horizontal or vertical)
+          // Check for overlap
+          const overlapX = kRight > cLeft && kLeft < cRight;
+          const overlapY = kBottom > cTop && kTop < cBottom;
+          if (overlapX && overlapY) {
+            // Determine which axis is the primary collision
             const prevKLeft = x;
             const prevKRight = x + K_SIZE;
             const prevKTop = y;
             const prevKBottom = y + K_SIZE;
-            // If previously outside horizontally, now inside: bounce X
+            // Horizontal collision
             if (
               (prevKRight <= cLeft && kRight > cLeft) ||
               (prevKLeft >= cRight && kLeft < cRight)
             ) {
               vx = -vx;
-              bouncedX = true;
-            }
-            // If previously outside vertically, now inside: bounce Y
-            if (
+              // Move just outside horizontally
+              if (vx < 0) nextX = cRight;
+              else nextX = cLeft - K_SIZE;
+            } else if (
               (prevKBottom <= cTop && kBottom > cTop) ||
               (prevKTop >= cBottom && kTop < cBottom)
             ) {
               vy = -vy;
-              bouncedY = true;
-            }
-            // If both, bounce both
-            if (!bouncedX && !bouncedY) {
-              // Default: bounce X
+              // Move just outside vertically
+              if (vy < 0) nextY = cBottom;
+              else nextY = cTop - K_SIZE;
+            } else {
+              // If ambiguous, bounce both
               vx = -vx;
+              vy = -vy;
             }
-            // Move K just outside the carousel to prevent sticking
-            if (vx < 0) nextX = cRight; // coming from right
-            else if (vx > 0) nextX = cLeft - K_SIZE; // coming from left
-            if (vy < 0) nextY = cBottom; // coming from below
-            else if (vy > 0) nextY = cTop - K_SIZE; // coming from above
           }
         }
         setVel({ x: vx, y: vy });
