@@ -19,6 +19,12 @@ const posters = [
   "/posters-homepage/poster-6.png",
 ];
 
+// Utility: detect mobile
+function isMobile() {
+  if (typeof window === "undefined") return false;
+  return window.matchMedia("(max-width: 640px)").matches;
+}
+
 export default function HomePage() {
   // Bouncing K logic
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -26,48 +32,6 @@ export default function HomePage() {
   const [vel, setVel] = useState({ x: 0.4, y: 0.4 }); // 5x slower
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const K_FONT_SIZE = Math.round(32 * 0.9); // 10% smaller
-
-  // Refs for indicator bounding boxes
-  const sinhalaIndicatorRef = useRef<HTMLDivElement>(null);
-  const englishIndicatorRef = useRef<HTMLDivElement>(null);
-  const [sinhalaIndicatorRect, setSinhalaIndicatorRect] =
-    useState<DOMRect | null>(null);
-  const [englishIndicatorRect, setEnglishIndicatorRect] =
-    useState<DOMRect | null>(null);
-  useEffect(() => {
-    function updateRects() {
-      if (sinhalaIndicatorRef.current)
-        setSinhalaIndicatorRect(
-          sinhalaIndicatorRef.current.getBoundingClientRect()
-        );
-      if (englishIndicatorRef.current)
-        setEnglishIndicatorRect(
-          englishIndicatorRef.current.getBoundingClientRect()
-        );
-    }
-    updateRects();
-    window.addEventListener("resize", updateRects);
-    return () => window.removeEventListener("resize", updateRects);
-  }, []);
-  useEffect(() => {
-    let running = true;
-    function update() {
-      if (!running) return;
-      if (sinhalaIndicatorRef.current)
-        setSinhalaIndicatorRect(
-          sinhalaIndicatorRef.current.getBoundingClientRect()
-        );
-      if (englishIndicatorRef.current)
-        setEnglishIndicatorRect(
-          englishIndicatorRef.current.getBoundingClientRect()
-        );
-      requestAnimationFrame(update);
-    }
-    update();
-    return () => {
-      running = false;
-    };
-  }, []);
 
   // Update viewport size on mount and resize
   useEffect(() => {
@@ -118,8 +82,8 @@ export default function HomePage() {
         let { x, y } = prev;
         let { x: vx, y: vy } = vel;
         let { width, height } = viewport;
-        let nextX = x + vx;
-        let nextY = y + vy;
+        let nextX = x + vx * (isMobile() ? 2 : 1);
+        let nextY = y + vy * (isMobile() ? 2 : 1);
         // Window edge bounce (use measured text size)
         if (nextX + bouncingSize.width >= width) {
           vx = -Math.abs(vx);
@@ -175,39 +139,6 @@ export default function HomePage() {
             }
           }
         }
-        // Indicator collision (Sinhala should bounce off English indicator, and vice versa)
-        if (englishIndicatorRect) {
-          const kLeft = nextX;
-          const kRight = nextX + bouncingSize.width;
-          const kTop = nextY;
-          const kBottom = nextY + bouncingSize.height;
-          const iLeft = englishIndicatorRect.left;
-          const iRight = englishIndicatorRect.right;
-          const iTop = englishIndicatorRect.top;
-          const iBottom = englishIndicatorRect.bottom;
-          const overlapX = kRight > iLeft && kLeft < iRight;
-          const overlapY = kBottom > iTop && kTop < iBottom;
-          if (overlapX && overlapY) {
-            const distLeft = Math.abs(kRight - iLeft);
-            const distRight = Math.abs(kLeft - iRight);
-            const distTop = Math.abs(kBottom - iTop);
-            const distBottom = Math.abs(kTop - iBottom);
-            const minDist = Math.min(distLeft, distRight, distTop, distBottom);
-            if (minDist === distLeft) {
-              vx = -Math.abs(vx);
-              nextX = iLeft - bouncingSize.width;
-            } else if (minDist === distRight) {
-              vx = Math.abs(vx);
-              nextX = iRight;
-            } else if (minDist === distTop) {
-              vy = -Math.abs(vy);
-              nextY = iTop - bouncingSize.height;
-            } else if (minDist === distBottom) {
-              vy = Math.abs(vy);
-              nextY = iBottom;
-            }
-          }
-        }
         setVel({ x: vx, y: vy });
         return {
           x: Math.max(0, Math.min(nextX, width - bouncingSize.width)),
@@ -221,7 +152,7 @@ export default function HomePage() {
     }
     return () => cancelAnimationFrame(animationFrame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewport, vel, englishIndicatorRect, bouncingSize]);
+  }, [viewport, vel]);
 
   // --- Second bouncing text (KULTJUR®) ---
   const KULTJUR_FONT_SIZE = Math.round(K_FONT_SIZE * 0.92); // 8% smaller
@@ -267,8 +198,8 @@ export default function HomePage() {
         let { x, y } = prev;
         let { x: vx, y: vy } = vel2;
         let { width, height } = viewport;
-        let nextX = x + vx;
-        let nextY = y + vy;
+        let nextX = x + vx * (isMobile() ? 2 : 1);
+        let nextY = y + vy * (isMobile() ? 2 : 1);
         // Window edge bounce (use measured text size)
         if (nextX + bouncingSize2.width >= width) {
           vx = -Math.abs(vx);
@@ -324,39 +255,6 @@ export default function HomePage() {
             }
           }
         }
-        // Indicator collision (English should bounce off Sinhala indicator, and vice versa)
-        if (sinhalaIndicatorRect) {
-          const kLeft = nextX;
-          const kRight = nextX + bouncingSize2.width;
-          const kTop = nextY;
-          const kBottom = nextY + bouncingSize2.height;
-          const iLeft = sinhalaIndicatorRect.left;
-          const iRight = sinhalaIndicatorRect.right;
-          const iTop = sinhalaIndicatorRect.top;
-          const iBottom = sinhalaIndicatorRect.bottom;
-          const overlapX = kRight > iLeft && kLeft < iRight;
-          const overlapY = kBottom > iTop && kTop < iBottom;
-          if (overlapX && overlapY) {
-            const distLeft = Math.abs(kRight - iLeft);
-            const distRight = Math.abs(kLeft - iRight);
-            const distTop = Math.abs(kBottom - iTop);
-            const distBottom = Math.abs(kTop - iBottom);
-            const minDist = Math.min(distLeft, distRight, distTop, distBottom);
-            if (minDist === distLeft) {
-              vx = -Math.abs(vx);
-              nextX = iLeft - bouncingSize2.width;
-            } else if (minDist === distRight) {
-              vx = Math.abs(vx);
-              nextX = iRight;
-            } else if (minDist === distTop) {
-              vy = -Math.abs(vy);
-              nextY = iTop - bouncingSize2.height;
-            } else if (minDist === distBottom) {
-              vy = Math.abs(vy);
-              nextY = iBottom;
-            }
-          }
-        }
         setVel2({ x: vx, y: vy });
         return {
           x: Math.max(0, Math.min(nextX, width - bouncingSize2.width)),
@@ -370,13 +268,7 @@ export default function HomePage() {
     }
     return () => cancelAnimationFrame(animationFrame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewport, vel2, bouncingSize2, sinhalaIndicatorRect]);
-
-  // Utility to detect mobile
-  function isMobile() {
-    if (typeof window === "undefined") return false;
-    return window.innerWidth < 640; // Tailwind's sm breakpoint
-  }
+  }, [viewport, vel2, bouncingSize2]);
 
   // Randomize starting position and velocity for both logos
   useEffect(() => {
@@ -389,31 +281,23 @@ export default function HomePage() {
     const yMax = rect.bottom - bouncingSize.height;
     const randX = leftMin + Math.random() * (leftMax - leftMin);
     const randY = yMin + Math.random() * (yMax - yMin);
+    setPos({ x: randX, y: randY });
     // Random velocity, not zero
     let vx = (Math.random() - 0.5) * 1.2;
     let vy = (Math.random() - 0.5) * 1.2;
     if (Math.abs(vx) < 0.2) vx = 0.4 * Math.sign(vx) || 0.4;
     if (Math.abs(vy) < 0.2) vy = 0.4 * Math.sign(vy) || 0.4;
-    if (isMobile()) {
-      vx *= 1.5;
-      vy *= 1.5;
-    }
-    setPos({ x: randX, y: randY });
     setVel({ x: vx, y: vy });
     // English: right 20% of carousel
     const rightMin = rect.right - rect.width * 0.2;
     const rightMax = rect.right - bouncingSize2.width;
     const randX2 = rightMin + Math.random() * (rightMax - rightMin);
     const randY2 = yMin + Math.random() * (yMax - yMin);
+    setPos2({ x: randX2, y: randY2 });
     let vx2 = (Math.random() - 0.5) * 1.2;
     let vy2 = (Math.random() - 0.5) * 1.2;
     if (Math.abs(vx2) < 0.2) vx2 = -0.4 * Math.sign(vx2) || -0.4;
     if (Math.abs(vy2) < 0.2) vy2 = 0.4 * Math.sign(vy2) || 0.4;
-    if (isMobile()) {
-      vx2 *= 1.5;
-      vy2 *= 1.5;
-    }
-    setPos2({ x: randX2, y: randY2 });
     setVel2({ x: vx2, y: vy2 });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [carouselRef.current, bouncingSize.height, bouncingSize2.width]);
@@ -429,7 +313,6 @@ export default function HomePage() {
       </Head>
       {/* Debug: Show Sinhala K position and velocity (top left) */}
       <div
-        ref={sinhalaIndicatorRef}
         className="fixed top-2 left-2 bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-1 sm:text-[14px] text-[11px]"
         style={{
           fontSize: undefined, // handled by Tailwind
@@ -443,10 +326,7 @@ export default function HomePage() {
         </div>
       </div>
       {/* Debug: Show English KULTJUR® position and velocity (bottom right) */}
-      <div
-        ref={englishIndicatorRef}
-        className="fixed bottom-2 right-2 bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-1 sm:text-[14px] text-[11px] hidden sm:block"
-      >
+      <div className="fixed bottom-2 right-2 bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-1 sm:text-[14px] text-[11px] hidden sm:block">
         <div>
           KULTJUR® Position: x={pos2.x.toFixed(1)}, y={pos2.y.toFixed(1)}
         </div>
