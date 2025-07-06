@@ -265,6 +265,38 @@ export default function HomePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewport, vel2, bouncingSize2]);
 
+  // Randomize starting position and velocity for both logos
+  useEffect(() => {
+    if (!carouselRef.current) return;
+    const rect = carouselRef.current.getBoundingClientRect();
+    // Sinhala: left 20% of carousel
+    const leftMin = rect.left;
+    const leftMax = rect.left + rect.width * 0.2;
+    const yMin = rect.top;
+    const yMax = rect.bottom - bouncingSize.height;
+    const randX = leftMin + Math.random() * (leftMax - leftMin);
+    const randY = yMin + Math.random() * (yMax - yMin);
+    setPos({ x: randX, y: randY });
+    // Random velocity, not zero
+    let vx = (Math.random() - 0.5) * 1.2;
+    let vy = (Math.random() - 0.5) * 1.2;
+    if (Math.abs(vx) < 0.2) vx = 0.4 * Math.sign(vx) || 0.4;
+    if (Math.abs(vy) < 0.2) vy = 0.4 * Math.sign(vy) || 0.4;
+    setVel({ x: vx, y: vy });
+    // English: right 20% of carousel
+    const rightMin = rect.right - rect.width * 0.2;
+    const rightMax = rect.right - bouncingSize2.width;
+    const randX2 = rightMin + Math.random() * (rightMax - rightMin);
+    const randY2 = yMin + Math.random() * (yMax - yMin);
+    setPos2({ x: randX2, y: randY2 });
+    let vx2 = (Math.random() - 0.5) * 1.2;
+    let vy2 = (Math.random() - 0.5) * 1.2;
+    if (Math.abs(vx2) < 0.2) vx2 = -0.4 * Math.sign(vx2) || -0.4;
+    if (Math.abs(vy2) < 0.2) vy2 = 0.4 * Math.sign(vy2) || 0.4;
+    setVel2({ x: vx2, y: vy2 });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [carouselRef.current, bouncingSize.height, bouncingSize2.width]);
+
   return (
     <>
       {/* Google Fonts for Sinhala */}
