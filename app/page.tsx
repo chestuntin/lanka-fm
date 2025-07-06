@@ -311,6 +311,55 @@ export default function HomePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [carouselRef.current, bouncingSize.height, bouncingSize2.width]);
 
+  // Drag and throw logic for Sinhala logo (desktop only)
+  const dragging = useRef(false);
+  const dragOffset = useRef({ x: 0, y: 0 });
+  const lastPositions = useRef<{ x: number; y: number; t: number }[]>([]);
+
+  function handleMouseDown(e: React.MouseEvent) {
+    if (isMobile()) return;
+    dragging.current = true;
+    dragOffset.current = {
+      x: e.clientX - pos.x,
+      y: e.clientY - pos.y,
+    };
+    lastPositions.current = [{ x: e.clientX, y: e.clientY, t: Date.now() }];
+    window.addEventListener("mousemove", handleMouseMove);
+    window.addEventListener("mouseup", handleMouseUp);
+    document.body.style.cursor = "grabbing";
+  }
+
+  function handleMouseMove(e: MouseEvent) {
+    if (!dragging.current) return;
+    const newX = e.clientX - dragOffset.current.x;
+    const newY = e.clientY - dragOffset.current.y;
+    setPos({ x: newX, y: newY });
+    // Track last positions for velocity
+    lastPositions.current.push({ x: e.clientX, y: e.clientY, t: Date.now() });
+    if (lastPositions.current.length > 5) lastPositions.current.shift();
+  }
+
+  function handleMouseUp(e: MouseEvent) {
+    if (!dragging.current) return;
+    dragging.current = false;
+    document.body.style.cursor = "";
+    window.removeEventListener("mousemove", handleMouseMove);
+    window.removeEventListener("mouseup", handleMouseUp);
+    // Calculate velocity from last positions
+    const points = lastPositions.current;
+    if (points.length >= 2) {
+      const first = points[0];
+      const last = points[points.length - 1];
+      const dt = (last.t - first.t) / 1000;
+      if (dt > 0) {
+        const vx = (last.x - first.x) / dt / 60; // px/frame
+        const vy = (last.y - first.y) / dt / 60;
+        setVel({ x: vx, y: vy });
+      }
+    }
+    lastPositions.current = [];
+  }
+
   return (
     <>
       {/* Google Fonts for Sinhala */}
@@ -345,6 +394,7 @@ export default function HomePage() {
       </div>
       {/* Bouncing K in viewport */}
       <div
+        onMouseDown={handleMouseDown}
         style={{
           position: "fixed",
           left: pos.x,
@@ -358,6 +408,7 @@ export default function HomePage() {
           textShadow: "0 2px 8px #000, 0 0 2px #fff",
           transition: "none",
           fontFamily: "Noto Sans Sinhala",
+          cursor: !isMobile() ? "grab" : "default",
         }}
         ref={bouncingTextRef}
       >
