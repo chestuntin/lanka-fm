@@ -32,6 +32,10 @@ export default function HomePage() {
   const [vel, setVel] = useState({ x: 0.4, y: 0.4 }); // 5x slower
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const K_FONT_SIZE = Math.round(32 * 0.9); // 10% smaller
+  const [kColor, setKColor] = useState("#fff");
+  const [kColorTimeout, setKColorTimeout] = useState<NodeJS.Timeout | null>(
+    null
+  );
 
   // Update viewport size on mount and resize
   useEffect(() => {
@@ -82,15 +86,18 @@ export default function HomePage() {
         let { x, y } = prev;
         let { x: vx, y: vy } = vel;
         let { width, height } = viewport;
-        let nextX = x + vx * (isMobile() ? 2 : 1);
-        let nextY = y + vy * (isMobile() ? 2 : 1);
+        let nextX = x + vx * (isMobile() ? 1.5 : 1);
+        let nextY = y + vy * (isMobile() ? 1.5 : 1);
+        let impact = false;
         // Window edge bounce (use measured text size)
         if (nextX + bouncingSize.width >= width) {
           vx = -Math.abs(vx);
           nextX = width - bouncingSize.width;
+          impact = true;
         } else if (nextX <= 0) {
           vx = Math.abs(vx);
           nextX = 0;
+          impact = true;
         }
         // On mobile, cap y so it never goes below the top border of the carousel
         let yMax = height;
@@ -101,9 +108,11 @@ export default function HomePage() {
         if (nextY + bouncingSize.height >= yMax) {
           vy = -Math.abs(vy);
           nextY = yMax - bouncingSize.height;
+          impact = true;
         } else if (nextY <= 0) {
           vy = Math.abs(vy);
           nextY = 0;
+          impact = true;
         }
         // Carousel collision (robust: bounce off closest side)
         if (carouselRef.current) {
@@ -130,20 +139,41 @@ export default function HomePage() {
               // Hit left side
               vx = -Math.abs(vx);
               nextX = cLeft - bouncingSize.width;
+              impact = true;
             } else if (minDist === distRight) {
               // Hit right side
               vx = Math.abs(vx);
               nextX = cRight;
+              impact = true;
             } else if (minDist === distTop) {
               // Hit top side
               vy = -Math.abs(vy);
               nextY = cTop - bouncingSize.height;
+              impact = true;
             } else if (minDist === distBottom) {
               // Hit bottom side
               vy = Math.abs(vy);
               nextY = cBottom;
+              impact = true;
             }
           }
+        }
+        // Color change on impact
+        if (impact) {
+          if (kColorTimeout) clearTimeout(kColorTimeout);
+          const colors = [
+            "#ff3b3b",
+            "#3b82f6",
+            "#f59e42",
+            "#22d3ee",
+            "#a3e635",
+            "#f472b6",
+            "#fff",
+          ];
+          const newColor =
+            colors[Math.floor(Math.random() * (colors.length - 1))];
+          setKColor(newColor);
+          setKColorTimeout(setTimeout(() => setKColor("#fff"), 180));
         }
         setVel({ x: vx, y: vy });
         return {
@@ -158,7 +188,7 @@ export default function HomePage() {
     }
     return () => cancelAnimationFrame(animationFrame);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewport, vel]);
+  }, [viewport, vel, kColorTimeout]);
 
   // --- Second bouncing text (KULTJUR®) ---
   const KULTJUR_FONT_SIZE = Math.round(K_FONT_SIZE * 0.92); // 8% smaller
@@ -319,10 +349,8 @@ export default function HomePage() {
       </Head>
       {/* Debug: Show Sinhala K position and velocity (top left) */}
       <div
-        className="fixed top-2 left-2 bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-1 sm:text-[14px] text-[11px]"
-        style={{
-          fontSize: undefined, // handled by Tailwind
-        }}
+        className="fixed bottom-2 right-2 bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-1 sm:text-[14px] text-[8.5px]"
+        style={{ fontSize: undefined }}
       >
         <div>
           කල්චර්® Position: x={pos.x.toFixed(1)}, y={pos.y.toFixed(1)}
@@ -348,12 +376,12 @@ export default function HomePage() {
           top: pos.y,
           fontSize: K_FONT_SIZE,
           fontWeight: 400,
-          color: "#fff",
+          color: kColor,
           userSelect: "none",
           pointerEvents: "none",
           zIndex: 9999,
           textShadow: "0 2px 8px #000, 0 0 2px #fff",
-          transition: "none",
+          transition: "color 0.18s cubic-bezier(.4,0,.2,1)",
           fontFamily: "Noto Sans Sinhala",
         }}
         ref={bouncingTextRef}
