@@ -19,13 +19,22 @@ const posters = [
   "/posters-homepage/poster-6.png",
 ];
 
-// Utility: detect mobile
-function isMobile() {
-  if (typeof window === "undefined") return false;
-  return window.matchMedia("(max-width: 640px)").matches;
+// Utility: detect mobile (stateful)
+function useIsMobile() {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    function check() {
+      setIsMobile(window.matchMedia("(max-width: 640px)").matches);
+    }
+    check();
+    window.addEventListener("resize", check);
+    return () => window.removeEventListener("resize", check);
+  }, []);
+  return isMobile;
 }
 
 export default function HomePage() {
+  const isMobile = useIsMobile();
   // Bouncing K logic
   const carouselRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ x: 50, y: 50 });
@@ -82,8 +91,8 @@ export default function HomePage() {
         let { x, y } = prev;
         let { x: vx, y: vy } = vel;
         let { width, height } = viewport;
-        let nextX = x + vx * (isMobile() ? 2 : 1);
-        let nextY = y + vy * (isMobile() ? 2 : 1);
+        let nextX = x + vx * (isMobile ? 2 : 1);
+        let nextY = y + vy * (isMobile ? 2 : 1);
         // Window edge bounce (use measured text size)
         if (nextX + bouncingSize.width >= width) {
           vx = -Math.abs(vx);
@@ -198,8 +207,8 @@ export default function HomePage() {
         let { x, y } = prev;
         let { x: vx, y: vy } = vel2;
         let { width, height } = viewport;
-        let nextX = x + vx * (isMobile() ? 2 : 1);
-        let nextY = y + vy * (isMobile() ? 2 : 1);
+        let nextX = x + vx * (isMobile ? 2 : 1);
+        let nextY = y + vy * (isMobile ? 2 : 1);
         // Window edge bounce (use measured text size)
         if (nextX + bouncingSize2.width >= width) {
           vx = -Math.abs(vx);
@@ -276,7 +285,7 @@ export default function HomePage() {
     const rect = carouselRef.current.getBoundingClientRect();
     // Sinhala: spawn logic
     let leftMin, leftMax;
-    if (isMobile()) {
+    if (isMobile) {
       // On mobile, only within carousel's horizontal bounds
       leftMin = rect.left;
       leftMax = rect.right - bouncingSize.width;
@@ -286,7 +295,7 @@ export default function HomePage() {
       leftMax = rect.left + rect.width * 0.2;
     }
     // On desktop, yMin is carousel top; on mobile, yMin is viewport top
-    const yMin = isMobile() ? 0 : rect.top;
+    const yMin = isMobile ? 0 : rect.top;
     const yMax = rect.bottom - bouncingSize.height;
     const randX = leftMin + Math.random() * Math.max(1, leftMax - leftMin);
     const randY = yMin + Math.random() * (yMax - yMin);
@@ -317,7 +326,7 @@ export default function HomePage() {
   const lastPositions = useRef<{ x: number; y: number; t: number }[]>([]);
 
   function handleMouseDown(e: React.MouseEvent) {
-    if (isMobile()) return;
+    if (isMobile) return;
     dragging.current = true;
     dragOffset.current = {
       x: e.clientX - pos.x,
@@ -394,8 +403,9 @@ export default function HomePage() {
       </div>
       {/* Bouncing K in viewport */}
       <div
-        onMouseDown={handleMouseDown}
+        onMouseDown={isMobile ? undefined : handleMouseDown}
         style={{
+          cursor: !isMobile ? "grab" : "default",
           position: "fixed",
           left: pos.x,
           top: pos.y,
@@ -403,12 +413,10 @@ export default function HomePage() {
           fontWeight: 400,
           color: "#fff",
           userSelect: "none",
-          pointerEvents: "none",
           zIndex: 9999,
           textShadow: "0 2px 8px #000, 0 0 2px #fff",
           transition: "none",
           fontFamily: "Noto Sans Sinhala",
-          cursor: !isMobile() ? "grab" : "default",
         }}
         ref={bouncingTextRef}
       >
