@@ -92,9 +92,15 @@ export default function HomePage() {
           vx = Math.abs(vx);
           nextX = 0;
         }
-        if (nextY + bouncingSize.height >= height) {
+        // On mobile, cap y so it never goes below the top border of the carousel
+        let yMax = height;
+        if (isMobile() && carouselRef.current) {
+          const rect = carouselRef.current.getBoundingClientRect();
+          yMax = rect.top - 8; // 8px margin above carousel
+        }
+        if (nextY + bouncingSize.height >= yMax) {
           vy = -Math.abs(vy);
-          nextY = height - bouncingSize.height;
+          nextY = yMax - bouncingSize.height;
         } else if (nextY <= 0) {
           vy = Math.abs(vy);
           nextY = 0;
@@ -142,7 +148,7 @@ export default function HomePage() {
         setVel({ x: vx, y: vy });
         return {
           x: Math.max(0, Math.min(nextX, width - bouncingSize.width)),
-          y: Math.max(0, Math.min(nextY, height - bouncingSize.height)),
+          y: Math.max(0, Math.min(nextY, yMax - bouncingSize.height)),
         };
       });
       animationFrame = requestAnimationFrame(animate);
