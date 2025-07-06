@@ -86,31 +86,23 @@ function ControlPanel({
   setIsHidden: (hidden: boolean) => void;
 }) {
   return (
-    <div className="fixed top-2 right-2 bg-black/70 text-white rounded-md z-[10000] font-mono px-3 py-2 sm:text-[14px] text-[11px]">
-      <div className="flex items-center gap-2">
-        <Toggle
-          pressed={isFrozen}
-          onPressedChange={setIsFrozen}
-          className={`text-xs font-bold transition-colors ${
-            isFrozen
-              ? "bg-red-600 hover:bg-red-700 text-white"
-              : "bg-green-600 hover:bg-green-700 text-white"
-          }`}
-        >
-          {isFrozen ? "FROZEN" : "FREEZE"}
-        </Toggle>
-        <Toggle
-          pressed={isHidden}
-          onPressedChange={setIsHidden}
-          className={`text-xs font-bold transition-colors ${
-            isHidden
-              ? "bg-blue-600 hover:bg-blue-700 text-white"
-              : "bg-gray-600 hover:bg-gray-700 text-white"
-          }`}
-        >
-          {isHidden ? "SHOW" : "HIDE"}
-        </Toggle>
-      </div>
+    <div className="fixed top-4 right-4 z-[10000] flex items-center gap-2">
+      <Toggle
+        pressed={isFrozen}
+        onPressedChange={setIsFrozen}
+        variant="outline"
+        aria-label="Freeze logos"
+      >
+        {isFrozen ? "Frozen" : "Freeze"}
+      </Toggle>
+      <Toggle
+        pressed={isHidden}
+        onPressedChange={setIsHidden}
+        variant="outline"
+        aria-label="Hide logos"
+      >
+        {isHidden ? "Show" : "Hide"}
+      </Toggle>
     </div>
   );
 }
