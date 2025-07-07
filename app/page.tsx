@@ -11,6 +11,7 @@ import { Toggle } from "@/components/ui/toggle";
 import { useRef, useEffect, useState } from "react";
 import Head from "next/head";
 import { Snowflake, Eye, EyeOff } from "lucide-react";
+import { CarouselGridOverlay } from "@/components/ui/carouselGridOverlay";
 
 const posters = [
   "/posters-homepage/poster-1.png",
@@ -80,11 +81,15 @@ function ControlPanel({
   setIsFrozen,
   isHidden,
   setIsHidden,
+  showGrid,
+  setShowGrid,
 }: {
   isFrozen: boolean;
   setIsFrozen: (frozen: boolean) => void;
   isHidden: boolean;
   setIsHidden: (hidden: boolean) => void;
+  showGrid: boolean;
+  setShowGrid: (show: boolean) => void;
 }) {
   return (
     <div className="fixed top-4 right-4 z-[10000] flex items-center gap-2">
@@ -108,6 +113,14 @@ function ControlPanel({
           <EyeOff className="h-4 w-4" />
         )}
       </Toggle>
+      <Toggle
+        pressed={showGrid}
+        onPressedChange={setShowGrid}
+        variant="outline"
+        aria-label={showGrid ? "Hide grid overlay" : "Show grid overlay"}
+      >
+        <span className="font-bold text-xs">GRID</span>
+      </Toggle>
     </div>
   );
 }
@@ -117,6 +130,7 @@ export default function HomePage() {
   // Control states
   const [isFrozen, setIsFrozen] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
+  const [showGrid, setShowGrid] = useState(false);
 
   // Bouncing K logic
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -471,6 +485,8 @@ export default function HomePage() {
         setIsFrozen={setIsFrozen}
         isHidden={isHidden}
         setIsHidden={setIsHidden}
+        showGrid={showGrid}
+        setShowGrid={setShowGrid}
       />
       {/* Debug: Show Sinhala K position and velocity (top left) */}
       <div
@@ -571,6 +587,8 @@ export default function HomePage() {
           ref={carouselRef}
           style={{ minHeight: 0 }}
         >
+          {/* Carousel Grid Overlay */}
+          {showGrid && <CarouselGridOverlay carouselRef={carouselRef} />}
           {/* Carousel */}
           <Carousel>
             <CarouselContent>
