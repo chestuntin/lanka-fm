@@ -385,19 +385,21 @@ export default function HomePage() {
     if (!carouselRef.current) return;
     const rect = carouselRef.current.getBoundingClientRect();
     // Sinhala: spawn logic
-    let leftMin, leftMax;
+    let leftMin, leftMax, yMin, yMax;
     if (isMobile) {
       // On mobile, only within carousel's horizontal bounds
       leftMin = rect.left;
       leftMax = rect.right - bouncingSize.width;
+      yMin = 0;
+      yMax = window.innerHeight - bouncingSize.height;
     } else {
       // On desktop, left 20% of carousel
       leftMin = rect.left;
       leftMax = rect.left + rect.width * 0.2;
+      // Avoid A and C: only spawn within carousel's vertical bounds
+      yMin = rect.top;
+      yMax = rect.bottom - bouncingSize.height;
     }
-    // On desktop, yMin is carousel top; on mobile, yMin is viewport top
-    const yMin = isMobile ? 0 : rect.top;
-    const yMax = rect.bottom - bouncingSize.height;
     const randX = leftMin + Math.random() * Math.max(1, leftMax - leftMin);
     const randY = yMin + Math.random() * (yMax - yMin);
     setPos({ x: randX, y: randY });
