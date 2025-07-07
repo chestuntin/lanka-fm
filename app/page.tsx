@@ -582,13 +582,13 @@ export default function HomePage() {
         </div>
       )}
       <div className="flex items-center justify-center min-h-screen bg-[#09090b]">
+        {/* Carousel Grid Overlay (outside carousel container) */}
+        {showGrid && <CarouselGridOverlay carouselRef={carouselRef} />}
         <div
           className="relative w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl mx-auto"
           ref={carouselRef}
           style={{ minHeight: 0 }}
         >
-          {/* Carousel Grid Overlay */}
-          {showGrid && <CarouselGridOverlay carouselRef={carouselRef} />}
           {/* Carousel */}
           <Carousel>
             <CarouselContent>
