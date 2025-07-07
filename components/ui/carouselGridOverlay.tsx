@@ -98,8 +98,23 @@ export const CarouselGridOverlay: React.FC<CarouselGridOverlayProps> = ({
     },
   ];
 
-  // Optionally, label the gutters/sections
+  // Section labels for all 9 regions
   const labels = [
+    // Top row
+    {
+      key: "E",
+      text: "E",
+      style: {
+        position: "fixed" as const,
+        left: 8,
+        top: rect.top - 28,
+        color: "#39FF14",
+        fontWeight: 700,
+        fontSize: 18,
+        zIndex: 10002,
+        pointerEvents: "none" as const,
+      },
+    }, // Top-left corner
     {
       key: "A",
       text: "A",
@@ -113,7 +128,7 @@ export const CarouselGridOverlay: React.FC<CarouselGridOverlayProps> = ({
         zIndex: 10002,
         pointerEvents: "none" as const,
       },
-    },
+    }, // Top gutter
     {
       key: "B",
       text: "B",
@@ -127,7 +142,65 @@ export const CarouselGridOverlay: React.FC<CarouselGridOverlayProps> = ({
         zIndex: 10002,
         pointerEvents: "none" as const,
       },
-    },
+    }, // Top-right corner
+    // Middle row
+    {
+      key: "F",
+      text: "F",
+      style: {
+        position: "fixed" as const,
+        left: 8,
+        top: rect.top + 32,
+        color: "#39FF14",
+        fontWeight: 700,
+        fontSize: 18,
+        zIndex: 10002,
+        pointerEvents: "none" as const,
+      },
+    }, // Left gutter
+    {
+      key: "I",
+      text: "I",
+      style: {
+        position: "fixed" as const,
+        left: rect.left + rect.width / 2 - 8,
+        top: rect.top + rect.height / 2 - 8,
+        color: "#39FF14",
+        fontWeight: 700,
+        fontSize: 18,
+        zIndex: 10002,
+        pointerEvents: "none" as const,
+      },
+    }, // Center (carousel)
+    {
+      key: "H",
+      text: "H",
+      style: {
+        position: "fixed" as const,
+        left: rect.right + 8,
+        top: rect.top + 32,
+        color: "#39FF14",
+        fontWeight: 700,
+        fontSize: 18,
+        zIndex: 10002,
+        pointerEvents: "none" as const,
+      },
+    }, // Right gutter
+    // Bottom row
+    {
+      key: "G",
+      text: "G",
+      style: {
+        position: "fixed" as const,
+        left: 8,
+        top: rect.bottom + 8,
+        color: "#39FF14",
+        fontWeight: 700,
+        fontSize: 18,
+        zIndex: 10002,
+        pointerEvents: "none" as const,
+      },
+    }, // Bottom-left corner
     {
       key: "C",
       text: "C",
@@ -141,7 +214,7 @@ export const CarouselGridOverlay: React.FC<CarouselGridOverlayProps> = ({
         zIndex: 10002,
         pointerEvents: "none" as const,
       },
-    },
+    }, // Bottom gutter
     {
       key: "D",
       text: "D",
@@ -155,7 +228,7 @@ export const CarouselGridOverlay: React.FC<CarouselGridOverlayProps> = ({
         zIndex: 10002,
         pointerEvents: "none" as const,
       },
-    },
+    }, // Bottom-right corner
   ];
 
   return (
