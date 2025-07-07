@@ -40,6 +40,10 @@ function VisitorCounter() {
   const [count, setCount] = useState<number | null>(null);
 
   useEffect(() => {
+    // Show last known count from sessionStorage while loading
+    const cached = sessionStorage.getItem("lastVisitorCount");
+    if (cached) setCount(Number(cached));
+
     // Only increment once per session
     const hasVisited = sessionStorage.getItem("hasVisited");
     const method = hasVisited ? "HEAD" : "GET";
@@ -47,9 +51,11 @@ function VisitorCounter() {
       if (method === "HEAD") {
         const text = await res.text();
         setCount(Number(text));
+        sessionStorage.setItem("lastVisitorCount", text);
       } else {
         const data = await res.json();
         setCount(data.count);
+        sessionStorage.setItem("lastVisitorCount", String(data.count));
         if (!hasVisited) sessionStorage.setItem("hasVisited", "true");
       }
     });
