@@ -37,42 +37,39 @@ function useIsMobile() {
 
 // Visitor Counter Component
 function VisitorCounter() {
-  const [count, setCount] = useState<number | null>(null);
+  const [count, setCount] = useState(0);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
-    // Show last known count from localStorage while loading
-    const cached = localStorage.getItem("lastVisitorCount");
-    if (cached) setCount(Number(cached));
+    // Load count from localStorage or start with a base number
+    const savedCount = localStorage.getItem("visitorCount");
+    const baseCount = savedCount ? parseInt(savedCount) : 59; // Start with 59
+    setCount(baseCount);
 
-    // Only increment once per session
+    // Increment count on first visit
     const hasVisited = sessionStorage.getItem("hasVisited");
-    const method = hasVisited ? "HEAD" : "GET";
-    fetch("/api/visitor-count", { method }).then(async (res) => {
-      if (method === "HEAD") {
-        const text = await res.text();
-        setCount(Number(text));
-        localStorage.setItem("lastVisitorCount", text);
-      } else {
-        const data = await res.json();
-        setCount(data.count);
-        localStorage.setItem("lastVisitorCount", String(data.count));
-        if (!hasVisited) sessionStorage.setItem("hasVisited", "true");
-      }
-    });
+    if (!hasVisited) {
+      const newCount = baseCount + 1;
+      setCount(newCount);
+      localStorage.setItem("visitorCount", newCount.toString());
+      sessionStorage.setItem("hasVisited", "true");
+    }
+
+    // Fade in effect
+    const timer = setTimeout(() => setIsVisible(true), 1000);
+    return () => clearTimeout(timer);
   }, []);
 
   return (
-    <div className="fixed bottom-2 left-2 bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-1 sm:text-[14px] text-[11px]">
-      <div className="flex items-center gap-2">
-        <span className="relative flex h-3 w-3">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
-          <span className="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
-        </span>
-        <span className="text-green-500 text-xs font-bold">LIVE</span>
-        <span className="text-white ml-2">
-          Visitors: {count !== null ? count.toLocaleString() : "..."}
-        </span>
-      </div>
+    <div
+      className={`fixed bottom-2 left-2 bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-1 sm:text-[14px] text-[11px] transition-opacity duration-1000 ${
+        isVisible ? "opacity-100" : "opacity-0"
+      }`}
+      style={{
+        fontSize: undefined, // handled by Tailwind
+      }}
+    >
+      <div>Visitors: {count.toLocaleString()}</div>
     </div>
   );
 }
