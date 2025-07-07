@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 
 interface CarouselGridOverlayProps {
   carouselRef: React.RefObject<HTMLDivElement>;
@@ -24,94 +24,150 @@ export const CarouselGridOverlay: React.FC<CarouselGridOverlayProps> = ({
   carouselRef,
 }) => {
   const [rect, setRect] = useState<DOMRect | null>(null);
+  const [viewport, setViewport] = useState({ width: 0, height: 0 });
 
   useEffect(() => {
-    function updateRect() {
+    function update() {
       if (carouselRef.current) {
         setRect(carouselRef.current.getBoundingClientRect());
       }
+      setViewport({ width: window.innerWidth, height: window.innerHeight });
     }
-    updateRect();
-    window.addEventListener("resize", updateRect);
-    return () => window.removeEventListener("resize", updateRect);
+    update();
+    window.addEventListener("resize", update);
+    return () => window.removeEventListener("resize", update);
   }, [carouselRef]);
 
   if (!rect) return null;
 
-  // Overlay grid lines: top, right, bottom, left, and two lines each for horizontal/vertical thirds
-  const gridLines = [
-    // Borders
-    { top: 0, left: 0, width: "100%", height: 2 }, // Top
-    { top: 0, right: 0, width: 2, height: "100%" }, // Right
-    { bottom: 0, left: 0, width: "100%", height: 2 }, // Bottom
-    { top: 0, left: 0, width: 2, height: "100%" }, // Left
-    // Thirds (horizontal)
-    { top: "33.33%", left: 0, width: "100%", height: 1, dashed: true },
-    { top: "66.66%", left: 0, width: "100%", height: 1, dashed: true },
-    // Thirds (vertical)
-    { top: 0, left: "33.33%", width: 1, height: "100%", dashed: true },
-    { top: 0, left: "66.66%", width: 1, height: "100%", dashed: true },
+  // Grid lines: vertical at left/right, horizontal at top/bottom of carousel
+  const lines = [
+    // Vertical lines
+    {
+      key: "left",
+      style: {
+        position: "fixed" as const,
+        top: 0,
+        left: rect.left,
+        width: 2,
+        height: viewport.height,
+        background: "#39FF14",
+        zIndex: 10001,
+        pointerEvents: "none" as const,
+      },
+    },
+    {
+      key: "right",
+      style: {
+        position: "fixed" as const,
+        top: 0,
+        left: rect.right - 2,
+        width: 2,
+        height: viewport.height,
+        background: "#39FF14",
+        zIndex: 10001,
+        pointerEvents: "none" as const,
+      },
+    },
+    // Horizontal lines
+    {
+      key: "top",
+      style: {
+        position: "fixed" as const,
+        left: 0,
+        top: rect.top,
+        width: viewport.width,
+        height: 2,
+        background: "#39FF14",
+        zIndex: 10001,
+        pointerEvents: "none" as const,
+      },
+    },
+    {
+      key: "bottom",
+      style: {
+        position: "fixed" as const,
+        left: 0,
+        top: rect.bottom - 2,
+        width: viewport.width,
+        height: 2,
+        background: "#39FF14",
+        zIndex: 10001,
+        pointerEvents: "none" as const,
+      },
+    },
+  ];
+
+  // Optionally, label the gutters/sections
+  const labels = [
+    {
+      key: "A",
+      text: "A",
+      style: {
+        position: "fixed" as const,
+        left: rect.left + 8,
+        top: rect.top - 28,
+        color: "#39FF14",
+        fontWeight: 700,
+        fontSize: 18,
+        zIndex: 10002,
+        pointerEvents: "none" as const,
+      },
+    },
+    {
+      key: "B",
+      text: "B",
+      style: {
+        position: "fixed" as const,
+        left: rect.right + 8,
+        top: rect.top - 28,
+        color: "#39FF14",
+        fontWeight: 700,
+        fontSize: 18,
+        zIndex: 10002,
+        pointerEvents: "none" as const,
+      },
+    },
+    {
+      key: "C",
+      text: "C",
+      style: {
+        position: "fixed" as const,
+        left: rect.left + 8,
+        top: rect.bottom + 8,
+        color: "#39FF14",
+        fontWeight: 700,
+        fontSize: 18,
+        zIndex: 10002,
+        pointerEvents: "none" as const,
+      },
+    },
+    {
+      key: "D",
+      text: "D",
+      style: {
+        position: "fixed" as const,
+        left: rect.right + 8,
+        top: rect.bottom + 8,
+        color: "#39FF14",
+        fontWeight: 700,
+        fontSize: 18,
+        zIndex: 10002,
+        pointerEvents: "none" as const,
+      },
+    },
   ];
 
   return (
-    <div
-      style={{
-        position: "absolute",
-        pointerEvents: "none",
-        top: 0,
-        left: 0,
-        width: rect.width,
-        height: rect.height,
-        zIndex: 10001,
-      }}
-    >
-      {/* Grid lines */}
-      {gridLines.map((line, i) => (
-        <div
-          key={i}
-          style={{
-            position: "absolute",
-            top: line.top,
-            left: line.left,
-            right: line.right,
-            bottom: line.bottom,
-            width: line.width,
-            height: line.height,
-            background: "rgba(0,255,0,0.5)",
-            borderRadius: 1,
-            borderStyle: line.dashed ? "dashed" : "solid",
-            borderWidth: line.dashed ? 0 : undefined,
-            borderTop: line.dashed ? "1px dashed rgba(0,255,0,0.5)" : undefined,
-            borderLeft: line.dashed
-              ? "1px dashed rgba(0,255,0,0.5)"
-              : undefined,
-          }}
-        />
+    <>
+      {lines.map((line) => (
+        <div key={line.key} style={line.style} />
       ))}
-      {/* Section labels */}
-      {sectionLabels.map((section) => (
-        <div
-          key={section.key}
-          style={{
-            position: "absolute",
-            top: section.top,
-            left: section.left,
-            right: section.right,
-            bottom: section.bottom,
-            transform: "translate(-50%, -50%)",
-            color: "#fff",
-            background: "rgba(0,0,0,0.5)",
-            padding: "2px 6px",
-            borderRadius: 4,
-            fontWeight: 700,
-            fontSize: 16,
-            pointerEvents: "none",
-            zIndex: 10002,
-          }}
-        >
-          {section.key}
+      {labels.map((label) => (
+        <div key={label.key} style={label.style}>
+          {label.text}
         </div>
       ))}
-    </div>
+    </>
   );
 };
