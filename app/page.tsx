@@ -11,7 +11,6 @@ import { Toggle } from "@/components/ui/toggle";
 import { useRef, useEffect, useState } from "react";
 import Head from "next/head";
 import { Snowflake, Eye, EyeOff } from "lucide-react";
-import { CarouselGridOverlay } from "@/components/ui/carouselGridOverlay";
 
 const posters = [
   "/posters-homepage/poster-1.png",
@@ -81,15 +80,11 @@ function ControlPanel({
   setIsFrozen,
   isHidden,
   setIsHidden,
-  showGrid,
-  setShowGrid,
 }: {
   isFrozen: boolean;
   setIsFrozen: (frozen: boolean) => void;
   isHidden: boolean;
   setIsHidden: (hidden: boolean) => void;
-  showGrid: boolean;
-  setShowGrid: (show: boolean) => void;
 }) {
   return (
     <div className="fixed top-4 right-4 z-[10000] flex items-center gap-2">
@@ -113,14 +108,6 @@ function ControlPanel({
           <EyeOff className="h-4 w-4" />
         )}
       </Toggle>
-      <Toggle
-        pressed={showGrid}
-        onPressedChange={setShowGrid}
-        variant="outline"
-        aria-label={showGrid ? "Hide grid overlay" : "Show grid overlay"}
-      >
-        <span className="font-bold text-xs">GRID</span>
-      </Toggle>
     </div>
   );
 }
@@ -130,7 +117,6 @@ export default function HomePage() {
   // Control states
   const [isFrozen, setIsFrozen] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
-  const [showGrid, setShowGrid] = useState(false);
 
   // Bouncing K logic
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -385,21 +371,19 @@ export default function HomePage() {
     if (!carouselRef.current) return;
     const rect = carouselRef.current.getBoundingClientRect();
     // Sinhala: spawn logic
-    let leftMin, leftMax, yMin, yMax;
+    let leftMin, leftMax;
     if (isMobile) {
       // On mobile, only within carousel's horizontal bounds
       leftMin = rect.left;
       leftMax = rect.right - bouncingSize.width;
-      yMin = 0;
-      yMax = window.innerHeight - bouncingSize.height;
     } else {
       // On desktop, left 20% of carousel
       leftMin = rect.left;
       leftMax = rect.left + rect.width * 0.2;
-      // Avoid A and C: only spawn within carousel's vertical bounds
-      yMin = rect.top;
-      yMax = rect.bottom - bouncingSize.height;
     }
+    // On desktop, yMin is carousel top; on mobile, yMin is viewport top
+    const yMin = isMobile ? 0 : rect.top;
+    const yMax = rect.bottom - bouncingSize.height;
     const randX = leftMin + Math.random() * Math.max(1, leftMax - leftMin);
     const randY = yMin + Math.random() * (yMax - yMin);
     setPos({ x: randX, y: randY });
@@ -487,8 +471,6 @@ export default function HomePage() {
         setIsFrozen={setIsFrozen}
         isHidden={isHidden}
         setIsHidden={setIsHidden}
-        showGrid={showGrid}
-        setShowGrid={setShowGrid}
       />
       {/* Debug: Show Sinhala K position and velocity (top left) */}
       <div
@@ -584,8 +566,6 @@ export default function HomePage() {
         </div>
       )}
       <div className="flex items-center justify-center min-h-screen bg-[#09090b]">
-        {/* Carousel Grid Overlay (outside carousel container) */}
-        {showGrid && <CarouselGridOverlay carouselRef={carouselRef} />}
         <div
           className="relative w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl mx-auto"
           ref={carouselRef}
