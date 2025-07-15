@@ -35,45 +35,6 @@ function useIsMobile() {
   return isMobile;
 }
 
-// Visitor Counter Component
-function VisitorCounter() {
-  const [count, setCount] = useState(0);
-  const [isVisible, setIsVisible] = useState(false);
-
-  useEffect(() => {
-    // Load count from localStorage or start with a base number
-    const savedCount = localStorage.getItem("visitorCount");
-    const baseCount = savedCount ? parseInt(savedCount) : 59; // Start with 59
-    setCount(baseCount);
-
-    // Increment count on first visit
-    const hasVisited = sessionStorage.getItem("hasVisited");
-    if (!hasVisited) {
-      const newCount = baseCount + 1;
-      setCount(newCount);
-      localStorage.setItem("visitorCount", newCount.toString());
-      sessionStorage.setItem("hasVisited", "true");
-    }
-
-    // Fade in effect
-    const timer = setTimeout(() => setIsVisible(true), 1000);
-    return () => clearTimeout(timer);
-  }, []);
-
-  return (
-    <div
-      className={`fixed bottom-2 left-2 bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-1 sm:text-[14px] text-[11px] transition-opacity duration-1000 ${
-        isVisible ? "opacity-100" : "opacity-0"
-      }`}
-      style={{
-        fontSize: undefined, // handled by Tailwind
-      }}
-    >
-      <div>Visitors: {count.toLocaleString()}</div>
-    </div>
-  );
-}
-
 // Control Panel Component
 function ControlPanel({
   isFrozen,
@@ -495,8 +456,6 @@ export default function HomePage() {
           KULTJUR® Velocity: vx={vel2.x.toFixed(3)}, vy={vel2.y.toFixed(3)}
         </div>
       </div>
-      {/* Visitor Counter */}
-      <VisitorCounter />
       {/* Bouncing K in viewport */}
       {!isHidden && (
         <div
