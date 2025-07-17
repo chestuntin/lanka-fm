@@ -1,26 +1,10 @@
 "use client";
 import Image from "next/image";
-import {
-  Carousel,
-  CarouselContent,
-  CarouselItem,
-  CarouselPrevious,
-  CarouselNext,
-} from "@/components/ui/carousel";
 import { Toggle } from "@/components/ui/toggle";
 import { useRef, useEffect, useState } from "react";
 import Head from "next/head";
 import { Snowflake, Eye, EyeOff } from "lucide-react";
 import ChatInput from "@/components/ChatInput";
-
-const posters = [
-  "/posters-homepage/poster-1.png",
-  "/posters-homepage/poster-2.png",
-  "/posters-homepage/poster-3.png",
-  "/posters-homepage/poster-4.png",
-  "/posters-homepage/poster-5.png",
-  "/posters-homepage/poster-6.png",
-];
 
 // Utility: detect mobile (stateful)
 function useIsMobile() {
@@ -81,7 +65,6 @@ export default function HomePage() {
   const [isHidden, setIsHidden] = useState(false);
 
   // Bouncing K logic
-  const carouselRef = useRef<HTMLDivElement>(null);
   const [pos, setPos] = useState({ x: 50, y: 50 });
   const [vel, setVel] = useState({ x: 0.4, y: 0.4 }); // 5x slower
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
@@ -155,46 +138,9 @@ export default function HomePage() {
           vy = Math.abs(vy);
           nextY = 0;
         }
-        // Carousel collision (robust: bounce off closest side)
-        if (carouselRef.current) {
-          const rect = carouselRef.current.getBoundingClientRect();
-          const kLeft = nextX;
-          const kRight = nextX + bouncingSize.width;
-          const kTop = nextY;
-          const kBottom = nextY + bouncingSize.height;
-          const cLeft = rect.left;
-          const cRight = rect.right;
-          const cTop = rect.top;
-          const cBottom = rect.bottom;
-          // Check for overlap
-          const overlapX = kRight > cLeft && kLeft < cRight;
-          const overlapY = kBottom > cTop && kTop < cBottom;
-          if (overlapX && overlapY) {
-            // Find the minimal distance to each side
-            const distLeft = Math.abs(kRight - cLeft);
-            const distRight = Math.abs(kLeft - cRight);
-            const distTop = Math.abs(kBottom - cTop);
-            const distBottom = Math.abs(kTop - cBottom);
-            const minDist = Math.min(distLeft, distRight, distTop, distBottom);
-            if (minDist === distLeft) {
-              // Hit left side
-              vx = -Math.abs(vx);
-              nextX = cLeft - bouncingSize.width;
-            } else if (minDist === distRight) {
-              // Hit right side
-              vx = Math.abs(vx);
-              nextX = cRight;
-            } else if (minDist === distTop) {
-              // Hit top side
-              vy = -Math.abs(vy);
-              nextY = cTop - bouncingSize.height;
-            } else if (minDist === distBottom) {
-              // Hit bottom side
-              vy = Math.abs(vy);
-              nextY = cBottom;
-            }
-          }
-        }
+        // Remove all references to carouselRef and the carousel collision logic
+        // The following block is now deleted:
+        // if (carouselRef.current) { ... }
         setVel({ x: vx, y: vy });
         return {
           x: Math.max(0, Math.min(nextX, width - bouncingSize.width)),
