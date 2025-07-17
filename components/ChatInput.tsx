@@ -49,7 +49,7 @@ export default function ChatInput({
     <div className="relative flex items-center gap-2 w-full px-2 py-2 bg-transparent">
       {/* Emoji Picker Popover */}
       {showEmoji && (
-        <div className="absolute bottom-full left-0 mb-2 z-50">
+        <div className="absolute bottom-full left-0 mb-3 z-50 rounded-xl shadow-2xl border border-neutral-800 bg-[#18181b]">
           <EmojiPicker
             onEmojiClick={handleEmojiSelect}
             searchDisabled
@@ -63,14 +63,14 @@ export default function ChatInput({
         type="button"
         size="icon"
         variant="ghost"
-        className="rounded-full text-muted-foreground h-12 w-12 min-w-0 min-h-0"
+        className="rounded-full text-muted-foreground h-12 w-12 min-w-0 min-h-0 transition-transform hover:scale-110 focus-visible:ring-2 focus-visible:ring-primary/60"
         aria-label="Add emoji"
         onClick={() => setShowEmoji((v) => !v)}
         tabIndex={-1}
       >
         <Smile className="w-6 h-6" />
       </Button>
-      <div className="flex-1 flex items-center bg-[#18181b] border border-muted-foreground/20 rounded-full px-4 py-0 h-12">
+      <div className="flex-1 flex items-center bg-white/5 backdrop-blur border border-white/10 hover:border-primary/40 focus-within:border-primary/60 shadow-lg rounded-full px-5 py-0 h-14 transition-all duration-200">
         <Input
           ref={inputRef}
           type="text"
@@ -78,9 +78,8 @@ export default function ChatInput({
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="bg-transparent border-none focus:ring-0 focus-visible:ring-0 rounded-full text-white placeholder:text-muted-foreground flex-1 shadow-none h-12 px-0"
+          className="bg-transparent border-none focus:ring-0 focus-visible:ring-0 rounded-full text-white placeholder:text-muted-foreground flex-1 shadow-none h-14 px-0 text-lg tracking-wide"
           autoComplete="off"
-          style={{ height: 48 }}
         />
       </div>
       <Button
@@ -88,7 +87,7 @@ export default function ChatInput({
         onClick={handleSend}
         size="icon"
         variant="ghost"
-        className="rounded-full ml-2 bg-muted text-muted-foreground hover:bg-muted/80 h-12 w-12 min-w-0 min-h-0"
+        className="rounded-full ml-2 bg-primary/80 text-white hover:bg-primary focus-visible:ring-2 focus-visible:ring-primary/60 h-12 w-12 min-w-0 min-h-0 transition-transform hover:scale-110 disabled:opacity-60 disabled:cursor-not-allowed"
         disabled={!message.trim()}
         aria-label="Send message"
       >
