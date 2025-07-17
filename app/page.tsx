@@ -209,26 +209,16 @@ export default function HomePage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [viewport, vel, isFrozen]);
 
-  // Randomize starting position and velocity for both logos
+  // Randomize starting position and velocity for Sinhala logo
   useEffect(() => {
-    if (!carouselRef.current) return;
-    const rect = carouselRef.current.getBoundingClientRect();
-    // Sinhala: spawn logic
-    let leftMin, leftMax;
-    if (isMobile) {
-      // On mobile, only within carousel's horizontal bounds
-      leftMin = rect.left;
-      leftMax = rect.right - bouncingSize.width;
-    } else {
-      // On desktop, left 20% of carousel
-      leftMin = rect.left;
-      leftMax = rect.left + rect.width * 0.2;
-    }
-    // On desktop, yMin is carousel top; on mobile, yMin is viewport top
-    const yMin = isMobile ? 0 : rect.top;
-    const yMax = rect.bottom - bouncingSize.height;
-    const randX = leftMin + Math.random() * Math.max(1, leftMax - leftMin);
-    const randY = yMin + Math.random() * (yMax - yMin);
+    if (!viewport.width || !viewport.height) return;
+    // Spawn anywhere within the viewport, ensuring the logo is fully visible
+    const xMin = 0;
+    const xMax = viewport.width - bouncingSize.width;
+    const yMin = 0;
+    const yMax = viewport.height - bouncingSize.height;
+    const randX = xMin + Math.random() * Math.max(1, xMax - xMin);
+    const randY = yMin + Math.random() * Math.max(1, yMax - yMin);
     setPos({ x: randX, y: randY });
     // Random velocity, not zero
     let vx = (Math.random() - 0.5) * 1.2;
@@ -237,7 +227,12 @@ export default function HomePage() {
     if (Math.abs(vy) < 0.2) vy = 0.4 * Math.sign(vy) || 0.4;
     setVel({ x: vx, y: vy });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [carouselRef.current, bouncingSize.height]);
+  }, [
+    viewport.width,
+    viewport.height,
+    bouncingSize.width,
+    bouncingSize.height,
+  ]);
 
   // Drag and throw logic for Sinhala logo (desktop only)
   const dragging = useRef(false);
