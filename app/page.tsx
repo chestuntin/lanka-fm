@@ -11,6 +11,7 @@ import { Toggle } from "@/components/ui/toggle";
 import { useRef, useEffect, useState } from "react";
 import Head from "next/head";
 import { Snowflake, Eye, EyeOff } from "lucide-react";
+import ChatInput from "@/components/ChatInput";
 
 const posters = [
   "/posters-homepage/poster-1.png",
@@ -347,6 +348,12 @@ export default function HomePage() {
           </span>
         </div>
       )}
+      {/* Centered ChatInput */}
+      <div className="flex items-center justify-center min-h-screen w-full">
+        <div className="w-full max-w-md z-10">
+          <ChatInput />
+        </div>
+      </div>
     </>
   );
 }
