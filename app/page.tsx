@@ -524,35 +524,6 @@ export default function HomePage() {
           </span>
         </div>
       )}
-      <div className="flex items-center justify-center min-h-screen bg-[#09090b]">
-        <div
-          className="relative w-full max-w-xs sm:max-w-md md:max-w-lg lg:max-w-xl mx-auto"
-          ref={carouselRef}
-          style={{ minHeight: 0 }}
-        >
-          {/* Carousel */}
-          <Carousel>
-            <CarouselContent>
-              {posters.map((src, idx) => (
-                <CarouselItem key={idx}>
-                  <div className="relative aspect-[1081/1351] w-full overflow-hidden shadow-lg mx-auto">
-                    <Image
-                      src={src}
-                      alt={`Poster ${idx + 1}`}
-                      fill
-                      style={{ objectFit: "cover" }}
-                      className=""
-                      priority={idx === 0}
-                    />
-                  </div>
-                </CarouselItem>
-              ))}
-            </CarouselContent>
-            <CarouselPrevious className="left-2 md:-left-14" />
-            <CarouselNext className="right-2 md:-right-14" />
-          </Carousel>
-        </div>
-      </div>
     </>
   );
 }
