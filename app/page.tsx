@@ -519,7 +519,6 @@ export default function HomePage() {
             isFrozen={isFrozen}
             isMobile={isMobile}
             zIndex={9998}
-            boundaries={chatBounds}
             forbiddenRect={inputBounds || undefined}
             respawnSignal={spawnKey}
           />
