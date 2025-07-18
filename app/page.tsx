@@ -145,40 +145,43 @@ function useBouncingElement(
           vy = Math.abs(vy);
           nextY = top;
         }
-        // Bounce off forbiddenRect (chat input box)
+        // Robust forbiddenRect bounce logic
         if (forbiddenRect) {
-          const willOverlap =
-            nextX + size.width > forbiddenRect.left &&
-            nextX < forbiddenRect.left + forbiddenRect.width &&
-            nextY + size.height > forbiddenRect.top &&
-            nextY < forbiddenRect.top + forbiddenRect.height;
-          if (willOverlap) {
-            // Determine which edge is hit and bounce accordingly
-            const prevRight = x + size.width;
-            const prevBottom = y + size.height;
-            const forbiddenRight = forbiddenRect.left + forbiddenRect.width;
-            const forbiddenBottom = forbiddenRect.top + forbiddenRect.height;
-            // Horizontal bounce
+          const forbiddenLeft = forbiddenRect.left;
+          const forbiddenRight = forbiddenRect.left + forbiddenRect.width;
+          const forbiddenTop = forbiddenRect.top;
+          const forbiddenBottom = forbiddenRect.top + forbiddenRect.height;
+
+          // Check horizontal collision
+          if (nextY + size.height > forbiddenTop && nextY < forbiddenBottom) {
+            // Coming from left to right
             if (
-              (prevRight <= forbiddenRect.left &&
-                nextX + size.width > forbiddenRect.left) ||
-              (x >= forbiddenRight && nextX < forbiddenRight)
+              x + size.width <= forbiddenLeft &&
+              nextX + size.width > forbiddenLeft
             ) {
-              vx = -vx;
-              if (prevRight <= forbiddenRect.left)
-                nextX = forbiddenRect.left - size.width;
-              else nextX = forbiddenRight;
+              vx = -Math.abs(vx);
+              nextX = forbiddenLeft - size.width;
             }
-            // Vertical bounce
+            // Coming from right to left
+            if (x >= forbiddenRight && nextX < forbiddenRight) {
+              vx = Math.abs(vx);
+              nextX = forbiddenRight;
+            }
+          }
+          // Check vertical collision
+          if (nextX + size.width > forbiddenLeft && nextX < forbiddenRight) {
+            // Coming from top to bottom
             if (
-              (prevBottom <= forbiddenRect.top &&
-                nextY + size.height > forbiddenRect.top) ||
-              (y >= forbiddenBottom && nextY < forbiddenBottom)
+              y + size.height <= forbiddenTop &&
+              nextY + size.height > forbiddenTop
             ) {
-              vy = -vy;
-              if (prevBottom <= forbiddenRect.top)
-                nextY = forbiddenRect.top - size.height;
-              else nextY = forbiddenBottom;
+              vy = -Math.abs(vy);
+              nextY = forbiddenTop - size.height;
+            }
+            // Coming from bottom to top
+            if (y >= forbiddenBottom && nextY < forbiddenBottom) {
+              vy = Math.abs(vy);
+              nextY = forbiddenBottom;
             }
           }
         }
