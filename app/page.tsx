@@ -152,36 +152,38 @@ function useBouncingElement(
           const forbiddenTop = forbiddenRect.top;
           const forbiddenBottom = forbiddenRect.top + forbiddenRect.height;
 
-          // Check horizontal collision
-          if (nextY + size.height > forbiddenTop && nextY < forbiddenBottom) {
-            // Coming from left to right
-            if (
-              x + size.width <= forbiddenLeft &&
-              nextX + size.width > forbiddenLeft
-            ) {
-              vx = -Math.abs(vx);
+          // If the next position would be inside the forbidden area, bounce and move out
+          const overlaps =
+            nextX + size.width > forbiddenLeft &&
+            nextX < forbiddenRight &&
+            nextY + size.height > forbiddenTop &&
+            nextY < forbiddenBottom;
+
+          if (overlaps) {
+            // Calculate distances to each edge
+            const distLeft = Math.abs(nextX + size.width - forbiddenLeft);
+            const distRight = Math.abs(nextX - forbiddenRight);
+            const distTop = Math.abs(nextY + size.height - forbiddenTop);
+            const distBottom = Math.abs(nextY - forbiddenBottom);
+
+            // Find the closest edge and eject
+            const minDist = Math.min(distLeft, distRight, distTop, distBottom);
+            if (minDist === distLeft) {
+              // Left edge
               nextX = forbiddenLeft - size.width;
-            }
-            // Coming from right to left
-            if (x >= forbiddenRight && nextX < forbiddenRight) {
-              vx = Math.abs(vx);
+              vx = -Math.abs(vx);
+            } else if (minDist === distRight) {
+              // Right edge
               nextX = forbiddenRight;
-            }
-          }
-          // Check vertical collision
-          if (nextX + size.width > forbiddenLeft && nextX < forbiddenRight) {
-            // Coming from top to bottom
-            if (
-              y + size.height <= forbiddenTop &&
-              nextY + size.height > forbiddenTop
-            ) {
-              vy = -Math.abs(vy);
+              vx = Math.abs(vx);
+            } else if (minDist === distTop) {
+              // Top edge
               nextY = forbiddenTop - size.height;
-            }
-            // Coming from bottom to top
-            if (y >= forbiddenBottom && nextY < forbiddenBottom) {
-              vy = Math.abs(vy);
+              vy = -Math.abs(vy);
+            } else if (minDist === distBottom) {
+              // Bottom edge
               nextY = forbiddenBottom;
+              vy = Math.abs(vy);
             }
           }
         }
