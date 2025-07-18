@@ -204,33 +204,61 @@ function useBouncingElement(
 
 // Custom spawn logic: random position outside the chat input box
 function getRandomPositionOutsideInput(
-  size: {
-    width: number;
-    height: number;
-  },
+  size: { width: number; height: number },
   inputBounds?: { left: number; top: number; width: number; height: number }
 ) {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
-  if (!inputBounds)
+  if (!inputBounds) {
     return {
       x: Math.random() * (vw - size.width),
       y: Math.random() * (vh - size.height),
     };
-  let tries = 0;
-  while (tries < 100) {
-    const x = Math.random() * (vw - size.width);
-    const y = Math.random() * (vh - size.height);
-    const overlaps =
-      x + size.width > inputBounds.left &&
-      x < inputBounds.left + inputBounds.width &&
-      y + size.height > inputBounds.top &&
-      y < inputBounds.top + inputBounds.height;
-    if (!overlaps) return { x, y };
-    tries++;
   }
-  // fallback
-  return { x: 0, y: 0 };
+  // Define the four regions
+  const regions = [
+    // Above
+    {
+      xMin: 0,
+      xMax: vw - size.width,
+      yMin: 0,
+      yMax: Math.max(0, inputBounds.top - size.height),
+    },
+    // Below
+    {
+      xMin: 0,
+      xMax: vw - size.width,
+      yMin: inputBounds.top + inputBounds.height,
+      yMax: vh - size.height,
+    },
+    // Left
+    {
+      xMin: 0,
+      xMax: Math.max(0, inputBounds.left - size.width),
+      yMin: inputBounds.top,
+      yMax: inputBounds.top + inputBounds.height - size.height,
+    },
+    // Right
+    {
+      xMin: inputBounds.left + inputBounds.width,
+      xMax: vw - size.width,
+      yMin: inputBounds.top,
+      yMax: inputBounds.top + inputBounds.height - size.height,
+    },
+  ].filter((r) => r.xMax > r.xMin && r.yMax > r.yMin);
+  if (regions.length === 0) {
+    // fallback: just use the whole viewport
+    return {
+      x: Math.random() * (vw - size.width),
+      y: Math.random() * (vh - size.height),
+    };
+  }
+  // Pick a random region, then a random point in that region
+  const region = regions[Math.floor(Math.random() * regions.length)];
+  return {
+    x: region.xMin + Math.random() * (region.xMax - region.xMin),
+    y: region.yMin + Math.random() * (region.yMax - region.yMin),
+  };
 }
 
 // BouncingMessage component for user messages
