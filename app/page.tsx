@@ -120,6 +120,50 @@ function useBouncingElement(
   return { pos, vel, elementRef, size };
 }
 
+// BouncingMessage component for user messages
+function BouncingMessage({
+  text,
+  isFrozen,
+  isMobile,
+  zIndex = 9998,
+}: {
+  text: string;
+  isFrozen: boolean;
+  isMobile: boolean;
+  zIndex?: number;
+}) {
+  const { pos, elementRef } = useBouncingElement(
+    text,
+    isFrozen,
+    isMobile,
+    zIndex
+  );
+  return (
+    <div
+      style={{
+        position: "fixed",
+        left: pos.x,
+        top: pos.y,
+        fontSize: 16,
+        fontWeight: 400,
+        color: "#fff",
+        userSelect: "none",
+        zIndex,
+        textShadow: "0 2px 8px #000, 0 0 2px #fff",
+        transition: "none",
+        fontFamily: "Arial, sans-serif",
+        backgroundColor: "rgba(0, 0, 0, 0.7)",
+        padding: "8px 12px",
+        borderRadius: "20px",
+        border: "1px solid rgba(255, 255, 255, 0.2)",
+      }}
+      ref={elementRef}
+    >
+      {text}
+    </div>
+  );
+}
+
 // Control Panel Component
 function ControlPanel({
   isFrozen,
@@ -255,39 +299,15 @@ export default function HomePage() {
       )}
       {/* Bouncing user messages */}
       {!isHidden &&
-        messages.map((message) => {
-          const messageBounce = useBouncingElement(
-            message.text,
-            isFrozen,
-            isMobile,
-            9998
-          );
-          return (
-            <div
-              key={message.id}
-              style={{
-                position: "fixed",
-                left: messageBounce.pos.x,
-                top: messageBounce.pos.y,
-                fontSize: 16,
-                fontWeight: 400,
-                color: "#fff",
-                userSelect: "none",
-                zIndex: 9998,
-                textShadow: "0 2px 8px #000, 0 0 2px #fff",
-                transition: "none",
-                fontFamily: "Arial, sans-serif",
-                backgroundColor: "rgba(0, 0, 0, 0.7)",
-                padding: "8px 12px",
-                borderRadius: "20px",
-                border: "1px solid rgba(255, 255, 255, 0.2)",
-              }}
-              ref={messageBounce.elementRef}
-            >
-              {message.text}
-            </div>
-          );
-        })}
+        messages.map((message) => (
+          <BouncingMessage
+            key={message.id}
+            text={message.text}
+            isFrozen={isFrozen}
+            isMobile={isMobile}
+            zIndex={9998}
+          />
+        ))}
       {/* Centered ChatInput */}
       <div className="flex items-center justify-center min-h-screen w-full">
         <div className="w-full max-w-md z-10">
