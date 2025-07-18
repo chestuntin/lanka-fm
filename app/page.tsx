@@ -20,6 +20,106 @@ function useIsMobile() {
   return isMobile;
 }
 
+// Custom hook for bouncing elements
+function useBouncingElement(
+  content: string,
+  isFrozen: boolean,
+  isMobile: boolean,
+  zIndex: number = 9999
+) {
+  const [pos, setPos] = useState({ x: 50, y: 50 });
+  const [vel, setVel] = useState({ x: 0.4, y: 0.4 });
+  const [viewport, setViewport] = useState({ width: 0, height: 0 });
+  const [size, setSize] = useState({ width: 48, height: 48 });
+  const elementRef = useRef<HTMLDivElement>(null);
+
+  // Update viewport size
+  useEffect(() => {
+    function updateSize() {
+      setViewport({ width: window.innerWidth, height: window.innerHeight });
+    }
+    updateSize();
+    window.addEventListener("resize", updateSize);
+    return () => window.removeEventListener("resize", updateSize);
+  }, []);
+
+  // Measure element size
+  useEffect(() => {
+    function updateSize() {
+      if (elementRef.current) {
+        const rect = elementRef.current.getBoundingClientRect();
+        setSize({ width: rect.width, height: rect.height });
+      }
+    }
+    updateSize();
+    window.addEventListener("resize", updateSize);
+    return () => window.removeEventListener("resize", updateSize);
+  }, [content]);
+
+  // Animation loop
+  useEffect(() => {
+    if (isFrozen) return;
+
+    let animationFrame: number;
+    function animate() {
+      setPos((prev) => {
+        let { x, y } = prev;
+        let { x: vx, y: vy } = vel;
+        let { width, height } = viewport;
+        let nextX = x + vx * (isMobile ? 2 : 1);
+        let nextY = y + vy * (isMobile ? 2 : 1);
+
+        // Window edge bounce
+        if (nextX + size.width >= width) {
+          vx = -Math.abs(vx);
+          nextX = width - size.width;
+        } else if (nextX <= 0) {
+          vx = Math.abs(vx);
+          nextX = 0;
+        }
+        if (nextY + size.height >= height) {
+          vy = -Math.abs(vy);
+          nextY = height - size.height;
+        } else if (nextY <= 0) {
+          vy = Math.abs(vy);
+          nextY = 0;
+        }
+
+        setVel({ x: vx, y: vy });
+        return {
+          x: Math.max(0, Math.min(nextX, width - size.width)),
+          y: Math.max(0, Math.min(nextY, height - size.height)),
+        };
+      });
+      animationFrame = requestAnimationFrame(animate);
+    }
+    if (viewport.width && viewport.height) {
+      animationFrame = requestAnimationFrame(animate);
+    }
+    return () => cancelAnimationFrame(animationFrame);
+  }, [viewport, vel, isFrozen, isMobile, size]);
+
+  // Randomize starting position and velocity
+  useEffect(() => {
+    if (!viewport.width || !viewport.height) return;
+    const xMin = 0;
+    const xMax = viewport.width - size.width;
+    const yMin = 0;
+    const yMax = viewport.height - size.height;
+    const randX = xMin + Math.random() * Math.max(1, xMax - xMin);
+    const randY = yMin + Math.random() * Math.max(1, yMax - yMin);
+    setPos({ x: randX, y: randY });
+
+    let vx = (Math.random() - 0.5) * 1.2;
+    let vy = (Math.random() - 0.5) * 1.2;
+    if (Math.abs(vx) < 0.2) vx = 0.4 * Math.sign(vx) || 0.4;
+    if (Math.abs(vy) < 0.2) vy = 0.4 * Math.sign(vy) || 0.4;
+    setVel({ x: vx, y: vy });
+  }, [viewport.width, viewport.height, size.width, size.height]);
+
+  return { pos, vel, elementRef, size };
+}
+
 // Control Panel Component
 function ControlPanel({
   isFrozen,
@@ -60,175 +160,34 @@ function ControlPanel({
 
 export default function HomePage() {
   const isMobile = useIsMobile();
-  // Control states
   const [isFrozen, setIsFrozen] = useState(false);
   const [isHidden, setIsHidden] = useState(false);
+  const [messages, setMessages] = useState<
+    Array<{ id: string; text: string; timestamp: number }>
+  >([]);
 
-  // Bouncing K logic
-  const [pos, setPos] = useState({ x: 50, y: 50 });
-  const [vel, setVel] = useState({ x: 0.4, y: 0.4 }); // 5x slower
-  const [viewport, setViewport] = useState({ width: 0, height: 0 });
-  const K_FONT_SIZE = Math.round(32 * 0.9); // 10% smaller
+  // Sinhala logo bouncing logic
+  const sinhalaLogo = useBouncingElement("කල්චර්®", isFrozen, isMobile, 9999);
 
-  // Update viewport size on mount and resize
-  useEffect(() => {
-    function updateSize() {
-      setViewport({ width: window.innerWidth, height: window.innerHeight });
-    }
-    updateSize();
-    window.addEventListener("resize", updateSize);
-    return () => window.removeEventListener("resize", updateSize);
-  }, []);
-
-  // Bouncing text size measurement
-  const bouncingTextRef = useRef<HTMLDivElement>(null);
-  const [bouncingSize, setBouncingSize] = useState({ width: 48, height: 48 });
-  useEffect(() => {
-    function updateSize() {
-      if (bouncingTextRef.current) {
-        const rect = bouncingTextRef.current.getBoundingClientRect();
-        setBouncingSize({ width: rect.width, height: rect.height });
-      }
-    }
-    updateSize();
-    window.addEventListener("resize", updateSize);
-    return () => window.removeEventListener("resize", updateSize);
-  }, []);
-  useEffect(() => {
-    if (!bouncingTextRef.current) return;
-    let running = true;
-    function update() {
-      if (!running) return;
-      if (bouncingTextRef.current) {
-        const rect = bouncingTextRef.current.getBoundingClientRect();
-        setBouncingSize({ width: rect.width, height: rect.height });
-      }
-      requestAnimationFrame(update);
-    }
-    update();
-    return () => {
-      running = false;
+  // Handle message sending
+  function handleSendMessage(message: string) {
+    const newMessage = {
+      id: Date.now().toString(),
+      text: message,
+      timestamp: Date.now(),
     };
+    setMessages((prev) => [...prev, newMessage]);
+  }
+
+  // Remove messages after 30 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setMessages((prev) => prev.filter((msg) => now - msg.timestamp < 30000));
+    }, 1000);
+
+    return () => clearInterval(interval);
   }, []);
-
-  // Animation loop with carousel collision
-  useEffect(() => {
-    if (isFrozen) return; // Skip animation if frozen
-
-    let animationFrame: number;
-    function animate() {
-      setPos((prev) => {
-        let { x, y } = prev;
-        let { x: vx, y: vy } = vel;
-        let { width, height } = viewport;
-        let nextX = x + vx * (isMobile ? 2 : 1);
-        let nextY = y + vy * (isMobile ? 2 : 1);
-        // Window edge bounce (use measured text size)
-        if (nextX + bouncingSize.width >= width) {
-          vx = -Math.abs(vx);
-          nextX = width - bouncingSize.width;
-        } else if (nextX <= 0) {
-          vx = Math.abs(vx);
-          nextX = 0;
-        }
-        if (nextY + bouncingSize.height >= height) {
-          vy = -Math.abs(vy);
-          nextY = height - bouncingSize.height;
-        } else if (nextY <= 0) {
-          vy = Math.abs(vy);
-          nextY = 0;
-        }
-        // Remove all references to carouselRef and the carousel collision logic
-        // The following block is now deleted:
-        // if (carouselRef.current) { ... }
-        setVel({ x: vx, y: vy });
-        return {
-          x: Math.max(0, Math.min(nextX, width - bouncingSize.width)),
-          y: Math.max(0, Math.min(nextY, height - bouncingSize.height)),
-        };
-      });
-      animationFrame = requestAnimationFrame(animate);
-    }
-    if (viewport.width && viewport.height) {
-      animationFrame = requestAnimationFrame(animate);
-    }
-    return () => cancelAnimationFrame(animationFrame);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [viewport, vel, isFrozen]);
-
-  // Randomize starting position and velocity for Sinhala logo
-  useEffect(() => {
-    if (!viewport.width || !viewport.height) return;
-    // Spawn anywhere within the viewport, ensuring the logo is fully visible
-    const xMin = 0;
-    const xMax = viewport.width - bouncingSize.width;
-    const yMin = 0;
-    const yMax = viewport.height - bouncingSize.height;
-    const randX = xMin + Math.random() * Math.max(1, xMax - xMin);
-    const randY = yMin + Math.random() * Math.max(1, yMax - yMin);
-    setPos({ x: randX, y: randY });
-    // Random velocity, not zero
-    let vx = (Math.random() - 0.5) * 1.2;
-    let vy = (Math.random() - 0.5) * 1.2;
-    if (Math.abs(vx) < 0.2) vx = 0.4 * Math.sign(vx) || 0.4;
-    if (Math.abs(vy) < 0.2) vy = 0.4 * Math.sign(vy) || 0.4;
-    setVel({ x: vx, y: vy });
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    viewport.width,
-    viewport.height,
-    bouncingSize.width,
-    bouncingSize.height,
-  ]);
-
-  // Drag and throw logic for Sinhala logo (desktop only)
-  const dragging = useRef(false);
-  const dragOffset = useRef({ x: 0, y: 0 });
-  const lastPositions = useRef<{ x: number; y: number; t: number }[]>([]);
-
-  function handleMouseDown(e: React.MouseEvent) {
-    if (isMobile || isFrozen) return;
-    dragging.current = true;
-    dragOffset.current = {
-      x: e.clientX - pos.x,
-      y: e.clientY - pos.y,
-    };
-    lastPositions.current = [{ x: e.clientX, y: e.clientY, t: Date.now() }];
-    window.addEventListener("mousemove", handleMouseMove);
-    window.addEventListener("mouseup", handleMouseUp);
-    document.body.style.cursor = "grabbing";
-  }
-
-  function handleMouseMove(e: MouseEvent) {
-    if (!dragging.current) return;
-    const newX = e.clientX - dragOffset.current.x;
-    const newY = e.clientY - dragOffset.current.y;
-    setPos({ x: newX, y: newY });
-    // Track last positions for velocity
-    lastPositions.current.push({ x: e.clientX, y: e.clientY, t: Date.now() });
-    if (lastPositions.current.length > 5) lastPositions.current.shift();
-  }
-
-  function handleMouseUp(e: MouseEvent) {
-    if (!dragging.current) return;
-    dragging.current = false;
-    document.body.style.cursor = "";
-    window.removeEventListener("mousemove", handleMouseMove);
-    window.removeEventListener("mouseup", handleMouseUp);
-    // Calculate velocity from last positions
-    const points = lastPositions.current;
-    if (points.length >= 2) {
-      const first = points[0];
-      const last = points[points.length - 1];
-      const dt = (last.t - first.t) / 1000;
-      if (dt > 0) {
-        const vx = (last.x - first.x) / dt / 60; // px/frame
-        const vy = (last.y - first.y) / dt / 60;
-        setVel({ x: vx, y: vy });
-      }
-    }
-    lastPositions.current = [];
-  }
 
   return (
     <>
@@ -254,22 +213,22 @@ export default function HomePage() {
         }}
       >
         <div>
-          කල්චර්® Position: x={pos.x.toFixed(1)}, y={pos.y.toFixed(1)}
+          කල්චර්® Position: x={sinhalaLogo.pos.x.toFixed(1)}, y=
+          {sinhalaLogo.pos.y.toFixed(1)}
         </div>
         <div>
-          කල්චර්® Velocity: vx={vel.x.toFixed(3)}, vy={vel.y.toFixed(3)}
+          කල්චර්® Velocity: vx={sinhalaLogo.vel.x.toFixed(3)}, vy=
+          {sinhalaLogo.vel.y.toFixed(3)}
         </div>
       </div>
-      {/* Bouncing K in viewport */}
+      {/* Bouncing Sinhala K in viewport */}
       {!isHidden && (
         <div
-          onMouseDown={isMobile ? undefined : handleMouseDown}
           style={{
-            cursor: !isMobile && !isFrozen ? "grab" : "default",
             position: "fixed",
-            left: pos.x,
-            top: pos.y,
-            fontSize: K_FONT_SIZE,
+            left: sinhalaLogo.pos.x,
+            top: sinhalaLogo.pos.y,
+            fontSize: Math.round(32 * 0.9),
             fontWeight: 400,
             color: "#fff",
             userSelect: "none",
@@ -278,7 +237,7 @@ export default function HomePage() {
             transition: "none",
             fontFamily: "Noto Sans Sinhala",
           }}
-          ref={bouncingTextRef}
+          ref={sinhalaLogo.elementRef}
         >
           <span>
             කල්චර්
@@ -294,10 +253,45 @@ export default function HomePage() {
           </span>
         </div>
       )}
+      {/* Bouncing user messages */}
+      {!isHidden &&
+        messages.map((message) => {
+          const messageBounce = useBouncingElement(
+            message.text,
+            isFrozen,
+            isMobile,
+            9998
+          );
+          return (
+            <div
+              key={message.id}
+              style={{
+                position: "fixed",
+                left: messageBounce.pos.x,
+                top: messageBounce.pos.y,
+                fontSize: 16,
+                fontWeight: 400,
+                color: "#fff",
+                userSelect: "none",
+                zIndex: 9998,
+                textShadow: "0 2px 8px #000, 0 0 2px #fff",
+                transition: "none",
+                fontFamily: "Arial, sans-serif",
+                backgroundColor: "rgba(0, 0, 0, 0.7)",
+                padding: "8px 12px",
+                borderRadius: "20px",
+                border: "1px solid rgba(255, 255, 255, 0.2)",
+              }}
+              ref={messageBounce.elementRef}
+            >
+              {message.text}
+            </div>
+          );
+        })}
       {/* Centered ChatInput */}
       <div className="flex items-center justify-center min-h-screen w-full">
         <div className="w-full max-w-md z-10">
-          <ChatInput />
+          <ChatInput onSend={handleSendMessage} />
         </div>
       </div>
     </>
