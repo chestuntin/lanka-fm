@@ -307,7 +307,6 @@ function BouncingMessage({
         textShadow: "0 2px 8px #000, 0 0 2px #fff",
         transition: "none",
         fontFamily: "Helvetica Neue, Helvetica, Arial, sans-serif",
-        backgroundColor: "rgba(0, 0, 0, 0.7)",
         padding: "8px 12px",
         borderRadius: "20px",
         // border removed
