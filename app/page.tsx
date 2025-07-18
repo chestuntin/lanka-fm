@@ -424,6 +424,11 @@ export default function HomePage() {
       {/* Bouncing Sinhala K in viewport */}
       {!isHidden && (
         <div
+          key={
+            inputBounds
+              ? `${inputBounds.left},${inputBounds.top},${inputBounds.width},${inputBounds.height}`
+              : "noinput"
+          }
           style={{
             position: "fixed",
             left: sinhalaLogo.pos.x,
@@ -459,7 +464,11 @@ export default function HomePage() {
         inputBounds &&
         messages.map((message) => (
           <BouncingMessage
-            key={message.id}
+            key={
+              message.id +
+              "-" +
+              `${inputBounds.left},${inputBounds.top},${inputBounds.width},${inputBounds.height}`
+            }
             text={message.text}
             isFrozen={isFrozen}
             isMobile={isMobile}
