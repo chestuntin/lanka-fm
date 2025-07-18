@@ -63,14 +63,14 @@ export default function ChatInput({
         type="button"
         size="icon"
         variant="ghost"
-        className="rounded-full text-muted-foreground h-14 w-14 min-w-0 min-h-0 transition-transform hover:scale-110 focus-visible:ring-2 focus-visible:ring-primary/60 bg-white/5 backdrop-blur border border-white/10 hover:border-primary/40"
+        className="rounded-full text-muted-foreground h-9 w-9 min-w-0 min-h-0 transition-transform hover:scale-110 focus-visible:ring-2 focus-visible:ring-primary/60 bg-white/5 backdrop-blur border border-white/10 hover:border-primary/40"
         aria-label="Add emoji"
         onClick={() => setShowEmoji((v) => !v)}
         tabIndex={-1}
       >
-        <Smile className="w-7 h-7" />
+        <Smile className="w-5 h-5" />
       </Button>
-      <div className="flex-1 flex items-center bg-white/5 backdrop-blur border border-white/10 hover:border-primary/40 focus-within:border-primary/60 shadow-lg rounded-full px-5 py-0 h-12 transition-all duration-200">
+      <div className="flex-1 flex items-center bg-white/5 backdrop-blur border border-white/10 hover:border-primary/40 focus-within:border-primary/60 shadow-lg rounded-full px-4 py-0 h-9 transition-all duration-200">
         <Input
           ref={inputRef}
           type="text"
@@ -78,7 +78,7 @@ export default function ChatInput({
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
           placeholder={placeholder}
-          className="bg-transparent border-none focus:ring-0 focus-visible:ring-0 rounded-full text-white placeholder:text-muted-foreground flex-1 shadow-none h-12 px-0 text-lg tracking-wide"
+          className="bg-transparent border-none focus:ring-0 focus-visible:ring-0 rounded-full text-white placeholder:text-muted-foreground flex-1 shadow-none h-9 px-0 text-lg tracking-wide"
           autoComplete="off"
         />
       </div>
@@ -87,11 +87,11 @@ export default function ChatInput({
         onClick={handleSend}
         size="icon"
         variant="ghost"
-        className="rounded-full ml-2 bg-primary/80 text-white hover:bg-primary focus-visible:ring-2 focus-visible:ring-primary/60 h-14 w-14 min-w-0 min-h-0 transition-transform hover:scale-110 disabled:opacity-60 disabled:cursor-not-allowed border border-primary/40"
+        className="rounded-full ml-2 bg-primary/80 text-white hover:bg-primary focus-visible:ring-2 focus-visible:ring-primary/60 h-9 w-9 min-w-0 min-h-0 transition-transform hover:scale-110 disabled:opacity-60 disabled:cursor-not-allowed border border-primary/40"
         disabled={!message.trim()}
         aria-label="Send message"
       >
-        <Send className="w-7 h-7" />
+        <Send className="w-5 h-5" />
       </Button>
     </div>
   );
