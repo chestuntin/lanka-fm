@@ -155,11 +155,14 @@ function BouncingMessage({
         backgroundColor: "rgba(0, 0, 0, 0.7)",
         padding: "8px 12px",
         borderRadius: "20px",
-        border: "1px solid rgba(255, 255, 255, 0.2)",
+        // border removed
       }}
       ref={elementRef}
     >
       {text}
+      <sup style={{ fontSize: "0.6em", verticalAlign: "super", marginLeft: 2 }}>
+        ®
+      </sup>
     </div>
   );
 }
@@ -311,7 +314,7 @@ export default function HomePage() {
       {/* Centered ChatInput */}
       <div className="flex items-center justify-center min-h-screen w-full">
         <div className="w-full max-w-md z-10">
-          <ChatInput onSend={handleSendMessage} />
+          <ChatInput onSend={handleSendMessage} placeholder="Type anything" />
         </div>
       </div>
     </>
