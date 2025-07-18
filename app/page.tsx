@@ -164,7 +164,8 @@ function useBouncingElement(
       width = viewport.width;
       height = viewport.height;
     }
-    if (!width || !height) return;
+    // Prevent spawn until forbiddenRect is available
+    if (!width || !height || (forbiddenRect && !forbiddenRect.width)) return;
     let spawnPos;
     if (forbiddenRect) {
       spawnPos = getRandomPositionOutsideInput(size, forbiddenRect);
