@@ -1,7 +1,13 @@
 "use client";
 import Image from "next/image";
 import { Toggle } from "@/components/ui/toggle";
-import { useRef, useEffect, useState, useLayoutEffect } from "react";
+import {
+  useRef,
+  useEffect,
+  useState,
+  useLayoutEffect,
+  useCallback,
+} from "react";
 import Head from "next/head";
 import { Snowflake, Eye, EyeOff } from "lucide-react";
 import ChatInput from "@/components/ChatInput";
@@ -27,7 +33,8 @@ function useBouncingElement(
   isMobile: boolean,
   zIndex: number = 9999,
   boundaries?: { left: number; top: number; width: number; height: number },
-  forbiddenRect?: { left: number; top: number; width: number; height: number }
+  forbiddenRect?: { left: number; top: number; width: number; height: number },
+  respawnSignal?: number
 ) {
   const [pos, setPos] = useState({ x: 50, y: 50 });
   const [vel, setVel] = useState({ x: 0.4, y: 0.4 });
@@ -58,6 +65,48 @@ function useBouncingElement(
     window.addEventListener("resize", updateSize);
     return () => window.removeEventListener("resize", updateSize);
   }, [content]);
+
+  // Respawn logic
+  const respawn = useCallback(() => {
+    let left, top, width, height;
+    if (boundaries) {
+      left = boundaries.left;
+      top = boundaries.top;
+      width = boundaries.width;
+      height = boundaries.height;
+    } else {
+      left = 0;
+      top = 0;
+      width = viewport.width;
+      height = viewport.height;
+    }
+    if (!width || !height || (forbiddenRect && !forbiddenRect.width)) return;
+    let spawnPos;
+    if (forbiddenRect) {
+      spawnPos = getRandomPositionOutsideInput(size, forbiddenRect);
+    } else {
+      const xMin = left;
+      const xMax = left + width - size.width;
+      const yMin = top;
+      const yMax = top + height - size.height;
+      spawnPos = {
+        x: xMin + Math.random() * Math.max(1, xMax - xMin),
+        y: yMin + Math.random() * Math.max(1, yMax - yMin),
+      };
+    }
+    setPos(spawnPos);
+    let vx = (Math.random() - 0.5) * 1.2;
+    let vy = (Math.random() - 0.5) * 1.2;
+    if (Math.abs(vx) < 0.2) vx = 0.4 * Math.sign(vx) || 0.4;
+    if (Math.abs(vy) < 0.2) vy = 0.4 * Math.sign(vy) || 0.4;
+    setVel({ x: vx, y: vy });
+  }, [boundaries, forbiddenRect, size, viewport]);
+
+  // Initial spawn and respawn on signal
+  useEffect(() => {
+    respawn();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [respawnSignal, size.width, size.height]);
 
   // Animation loop
   useEffect(() => {
@@ -150,52 +199,7 @@ function useBouncingElement(
     return () => cancelAnimationFrame(animationFrame);
   }, [viewport, vel, isFrozen, isMobile, size, boundaries, forbiddenRect]);
 
-  // Randomize starting position and velocity
-  useEffect(() => {
-    let left, top, width, height;
-    if (boundaries) {
-      left = boundaries.left;
-      top = boundaries.top;
-      width = boundaries.width;
-      height = boundaries.height;
-    } else {
-      left = 0;
-      top = 0;
-      width = viewport.width;
-      height = viewport.height;
-    }
-    // Prevent spawn until forbiddenRect is available
-    if (!width || !height || (forbiddenRect && !forbiddenRect.width)) return;
-    let spawnPos;
-    if (forbiddenRect) {
-      spawnPos = getRandomPositionOutsideInput(size, forbiddenRect);
-    } else {
-      const xMin = left;
-      const xMax = left + width - size.width;
-      const yMin = top;
-      const yMax = top + height - size.height;
-      spawnPos = {
-        x: xMin + Math.random() * Math.max(1, xMax - xMin),
-        y: yMin + Math.random() * Math.max(1, yMax - yMin),
-      };
-    }
-    setPos(spawnPos);
-    let vx = (Math.random() - 0.5) * 1.2;
-    let vy = (Math.random() - 0.5) * 1.2;
-    if (Math.abs(vx) < 0.2) vx = 0.4 * Math.sign(vx) || 0.4;
-    if (Math.abs(vy) < 0.2) vy = 0.4 * Math.sign(vy) || 0.4;
-    setVel({ x: vx, y: vy });
-  }, [
-    boundaries?.width,
-    boundaries?.height,
-    size.width,
-    size.height,
-    viewport.width,
-    viewport.height,
-    forbiddenRect,
-  ]);
-
-  return { pos, vel, elementRef, size };
+  return { pos, vel, elementRef, size, respawn };
 }
 
 // Custom spawn logic: random position outside the chat input box
@@ -237,6 +241,7 @@ function BouncingMessage({
   zIndex = 9998,
   boundaries,
   forbiddenRect,
+  respawnSignal,
 }: {
   text: string;
   isFrozen: boolean;
@@ -244,6 +249,7 @@ function BouncingMessage({
   zIndex?: number;
   boundaries?: { left: number; top: number; width: number; height: number };
   forbiddenRect?: { left: number; top: number; width: number; height: number };
+  respawnSignal?: number;
 }) {
   const { pos, elementRef } = useBouncingElement(
     text,
@@ -251,7 +257,8 @@ function BouncingMessage({
     isMobile,
     zIndex,
     boundaries,
-    forbiddenRect
+    forbiddenRect,
+    respawnSignal
   );
   return (
     <div
@@ -341,6 +348,19 @@ export default function HomePage() {
     width: number;
     height: number;
   } | null>(null);
+  const [spawnKey, setSpawnKey] = useState(0);
+
+  // When inputBounds changes, force respawn of all bouncing elements
+  useEffect(() => {
+    if (inputBounds && inputBounds.width) {
+      setSpawnKey((k) => k + 1);
+    }
+  }, [
+    inputBounds?.left,
+    inputBounds?.top,
+    inputBounds?.width,
+    inputBounds?.height,
+  ]);
 
   // Track chat area and input box boundaries
   useLayoutEffect(() => {
@@ -376,7 +396,8 @@ export default function HomePage() {
     isMobile,
     9999,
     undefined,
-    inputBounds || undefined
+    inputBounds || undefined,
+    spawnKey
   );
 
   // Handle message sending
@@ -424,11 +445,7 @@ export default function HomePage() {
       {/* Bouncing Sinhala K in viewport */}
       {!isHidden && (
         <div
-          key={
-            inputBounds
-              ? `${inputBounds.left},${inputBounds.top},${inputBounds.width},${inputBounds.height}`
-              : "noinput"
-          }
+          key={"sinhala-" + spawnKey}
           style={{
             position: "fixed",
             left: sinhalaLogo.pos.x,
@@ -464,17 +481,14 @@ export default function HomePage() {
         inputBounds &&
         messages.map((message) => (
           <BouncingMessage
-            key={
-              message.id +
-              "-" +
-              `${inputBounds.left},${inputBounds.top},${inputBounds.width},${inputBounds.height}`
-            }
+            key={message.id + "-" + spawnKey}
             text={message.text}
             isFrozen={isFrozen}
             isMobile={isMobile}
             zIndex={9998}
             boundaries={chatBounds}
             forbiddenRect={inputBounds || undefined}
+            respawnSignal={spawnKey}
           />
         ))}
       {/* Centered ChatInput with border and no padding */}
