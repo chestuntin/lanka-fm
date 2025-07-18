@@ -1,7 +1,7 @@
 "use client";
 import Image from "next/image";
 import { Toggle } from "@/components/ui/toggle";
-import { useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState, useLayoutEffect } from "react";
 import Head from "next/head";
 import { Snowflake, Eye, EyeOff } from "lucide-react";
 import ChatInput from "@/components/ChatInput";
@@ -25,7 +25,8 @@ function useBouncingElement(
   content: string,
   isFrozen: boolean,
   isMobile: boolean,
-  zIndex: number = 9999
+  zIndex: number = 9999,
+  boundaries?: { left: number; top: number; width: number; height: number }
 ) {
   const [pos, setPos] = useState({ x: 50, y: 50 });
   const [vel, setVel] = useState({ x: 0.4, y: 0.4 });
@@ -33,15 +34,16 @@ function useBouncingElement(
   const [size, setSize] = useState({ width: 48, height: 48 });
   const elementRef = useRef<HTMLDivElement>(null);
 
-  // Update viewport size
+  // Update viewport size (for Sinhala logo only)
   useEffect(() => {
+    if (boundaries) return;
     function updateSize() {
       setViewport({ width: window.innerWidth, height: window.innerHeight });
     }
     updateSize();
     window.addEventListener("resize", updateSize);
     return () => window.removeEventListener("resize", updateSize);
-  }, []);
+  }, [boundaries]);
 
   // Measure element size
   useEffect(() => {
@@ -59,63 +61,92 @@ function useBouncingElement(
   // Animation loop
   useEffect(() => {
     if (isFrozen) return;
-
     let animationFrame: number;
     function animate() {
       setPos((prev) => {
         let { x, y } = prev;
         let { x: vx, y: vy } = vel;
-        let { width, height } = viewport;
+        let width, height, left, top;
+        if (boundaries) {
+          left = boundaries.left;
+          top = boundaries.top;
+          width = boundaries.width;
+          height = boundaries.height;
+        } else {
+          left = 0;
+          top = 0;
+          width = viewport.width;
+          height = viewport.height;
+        }
         let nextX = x + vx * (isMobile ? 2 : 1);
         let nextY = y + vy * (isMobile ? 2 : 1);
-
-        // Window edge bounce
-        if (nextX + size.width >= width) {
+        // Bounce off boundaries
+        if (nextX + size.width >= left + width) {
           vx = -Math.abs(vx);
-          nextX = width - size.width;
-        } else if (nextX <= 0) {
+          nextX = left + width - size.width;
+        } else if (nextX <= left) {
           vx = Math.abs(vx);
-          nextX = 0;
+          nextX = left;
         }
-        if (nextY + size.height >= height) {
+        if (nextY + size.height >= top + height) {
           vy = -Math.abs(vy);
-          nextY = height - size.height;
-        } else if (nextY <= 0) {
+          nextY = top + height - size.height;
+        } else if (nextY <= top) {
           vy = Math.abs(vy);
-          nextY = 0;
+          nextY = top;
         }
-
         setVel({ x: vx, y: vy });
         return {
-          x: Math.max(0, Math.min(nextX, width - size.width)),
-          y: Math.max(0, Math.min(nextY, height - size.height)),
+          x: Math.max(left, Math.min(nextX, left + width - size.width)),
+          y: Math.max(top, Math.min(nextY, top + height - size.height)),
         };
       });
       animationFrame = requestAnimationFrame(animate);
     }
-    if (viewport.width && viewport.height) {
+    if (
+      (boundaries && boundaries.width && boundaries.height) ||
+      (!boundaries && viewport.width && viewport.height)
+    ) {
       animationFrame = requestAnimationFrame(animate);
     }
     return () => cancelAnimationFrame(animationFrame);
-  }, [viewport, vel, isFrozen, isMobile, size]);
+  }, [viewport, vel, isFrozen, isMobile, size, boundaries]);
 
   // Randomize starting position and velocity
   useEffect(() => {
-    if (!viewport.width || !viewport.height) return;
-    const xMin = 0;
-    const xMax = viewport.width - size.width;
-    const yMin = 0;
-    const yMax = viewport.height - size.height;
+    let left, top, width, height;
+    if (boundaries) {
+      left = boundaries.left;
+      top = boundaries.top;
+      width = boundaries.width;
+      height = boundaries.height;
+    } else {
+      left = 0;
+      top = 0;
+      width = viewport.width;
+      height = viewport.height;
+    }
+    if (!width || !height) return;
+    const xMin = left;
+    const xMax = left + width - size.width;
+    const yMin = top;
+    const yMax = top + height - size.height;
     const randX = xMin + Math.random() * Math.max(1, xMax - xMin);
     const randY = yMin + Math.random() * Math.max(1, yMax - yMin);
     setPos({ x: randX, y: randY });
-
     let vx = (Math.random() - 0.5) * 1.2;
     let vy = (Math.random() - 0.5) * 1.2;
     if (Math.abs(vx) < 0.2) vx = 0.4 * Math.sign(vx) || 0.4;
     if (Math.abs(vy) < 0.2) vy = 0.4 * Math.sign(vy) || 0.4;
     setVel({ x: vx, y: vy });
-  }, [viewport.width, viewport.height, size.width, size.height]);
+  }, [
+    boundaries?.width,
+    boundaries?.height,
+    size.width,
+    size.height,
+    viewport.width,
+    viewport.height,
+  ]);
 
   return { pos, vel, elementRef, size };
 }
@@ -126,17 +157,20 @@ function BouncingMessage({
   isFrozen,
   isMobile,
   zIndex = 9998,
+  boundaries,
 }: {
   text: string;
   isFrozen: boolean;
   isMobile: boolean;
   zIndex?: number;
+  boundaries?: { left: number; top: number; width: number; height: number };
 }) {
   const { pos, elementRef } = useBouncingElement(
     text,
     isFrozen,
     isMobile,
-    zIndex
+    zIndex,
+    boundaries
   );
   return (
     <div
@@ -212,8 +246,15 @@ export default function HomePage() {
   const [messages, setMessages] = useState<
     Array<{ id: string; text: string; timestamp: number }>
   >([]);
+  const chatAreaRef = useRef<HTMLDivElement>(null);
+  const [chatBounds, setChatBounds] = useState<{
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  } | null>(null);
 
-  // Sinhala logo bouncing logic
+  // Sinhala logo bouncing logic (still uses viewport)
   const sinhalaLogo = useBouncingElement("කල්චර්®", isFrozen, isMobile, 9999);
 
   // Handle message sending
@@ -226,14 +267,22 @@ export default function HomePage() {
     setMessages((prev) => [...prev, newMessage]);
   }
 
-  // Remove messages after 30 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = Date.now();
-      setMessages((prev) => prev.filter((msg) => now - msg.timestamp < 30000));
-    }, 1000);
-
-    return () => clearInterval(interval);
+  // Track chat area boundaries
+  useLayoutEffect(() => {
+    function updateBounds() {
+      if (chatAreaRef.current) {
+        const rect = chatAreaRef.current.getBoundingClientRect();
+        setChatBounds({
+          left: rect.left,
+          top: rect.top,
+          width: rect.width,
+          height: rect.height,
+        });
+      }
+    }
+    updateBounds();
+    window.addEventListener("resize", updateBounds);
+    return () => window.removeEventListener("resize", updateBounds);
   }, []);
 
   return (
@@ -300,8 +349,9 @@ export default function HomePage() {
           </span>
         </div>
       )}
-      {/* Bouncing user messages */}
+      {/* Bouncing user messages inside chat area */}
       {!isHidden &&
+        chatBounds &&
         messages.map((message) => (
           <BouncingMessage
             key={message.id}
@@ -309,11 +359,16 @@ export default function HomePage() {
             isFrozen={isFrozen}
             isMobile={isMobile}
             zIndex={9998}
+            boundaries={chatBounds}
           />
         ))}
-      {/* Centered ChatInput */}
+      {/* Centered ChatInput with border and no padding */}
       <div className="flex items-center justify-center min-h-screen w-full">
-        <div className="w-full max-w-md z-10">
+        <div
+          ref={chatAreaRef}
+          className="w-full max-w-md z-10 border-2 border-primary bg-transparent rounded-xl m-0 p-0 flex flex-col justify-center items-center relative overflow-hidden"
+          style={{ boxSizing: "border-box" }}
+        >
           <ChatInput onSend={handleSendMessage} placeholder="Type anything" />
         </div>
       </div>
