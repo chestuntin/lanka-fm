@@ -87,7 +87,7 @@ export default function ChatInput({
         onClick={handleSend}
         size="icon"
         variant="ghost"
-        className="rounded-full mx-2 bg-primary/80 text-white hover:bg-primary focus-visible:ring-2 focus-visible:ring-primary/60 h-9 w-9 min-w-0 min-h-0 transition-transform hover:scale-110 disabled:opacity-60 disabled:cursor-not-allowed border border-primary/40"
+        className="rounded-full mx-2 text-muted-foreground h-9 w-9 min-w-0 min-h-0 transition-transform hover:scale-110 focus-visible:ring-2 focus-visible:ring-primary/60 bg-white/5 backdrop-blur border border-white/10 hover:border-primary/40 disabled:opacity-60 disabled:cursor-not-allowed"
         disabled={!message.trim()}
         aria-label="Send message"
       >
