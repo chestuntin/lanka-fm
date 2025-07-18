@@ -26,7 +26,8 @@ function useBouncingElement(
   isFrozen: boolean,
   isMobile: boolean,
   zIndex: number = 9999,
-  boundaries?: { left: number; top: number; width: number; height: number }
+  boundaries?: { left: number; top: number; width: number; height: number },
+  forbiddenRect?: { left: number; top: number; width: number; height: number }
 ) {
   const [pos, setPos] = useState({ x: 50, y: 50 });
   const [vel, setVel] = useState({ x: 0.4, y: 0.4 });
@@ -95,6 +96,43 @@ function useBouncingElement(
           vy = Math.abs(vy);
           nextY = top;
         }
+        // Bounce off forbiddenRect (chat input box)
+        if (forbiddenRect) {
+          const willOverlap =
+            nextX + size.width > forbiddenRect.left &&
+            nextX < forbiddenRect.left + forbiddenRect.width &&
+            nextY + size.height > forbiddenRect.top &&
+            nextY < forbiddenRect.top + forbiddenRect.height;
+          if (willOverlap) {
+            // Determine which edge is hit and bounce accordingly
+            const prevRight = x + size.width;
+            const prevBottom = y + size.height;
+            const forbiddenRight = forbiddenRect.left + forbiddenRect.width;
+            const forbiddenBottom = forbiddenRect.top + forbiddenRect.height;
+            // Horizontal bounce
+            if (
+              (prevRight <= forbiddenRect.left &&
+                nextX + size.width > forbiddenRect.left) ||
+              (x >= forbiddenRight && nextX < forbiddenRight)
+            ) {
+              vx = -vx;
+              if (prevRight <= forbiddenRect.left)
+                nextX = forbiddenRect.left - size.width;
+              else nextX = forbiddenRight;
+            }
+            // Vertical bounce
+            if (
+              (prevBottom <= forbiddenRect.top &&
+                nextY + size.height > forbiddenRect.top) ||
+              (y >= forbiddenBottom && nextY < forbiddenBottom)
+            ) {
+              vy = -vy;
+              if (prevBottom <= forbiddenRect.top)
+                nextY = forbiddenRect.top - size.height;
+              else nextY = forbiddenBottom;
+            }
+          }
+        }
         setVel({ x: vx, y: vy });
         return {
           x: Math.max(left, Math.min(nextX, left + width - size.width)),
@@ -110,7 +148,7 @@ function useBouncingElement(
       animationFrame = requestAnimationFrame(animate);
     }
     return () => cancelAnimationFrame(animationFrame);
-  }, [viewport, vel, isFrozen, isMobile, size, boundaries]);
+  }, [viewport, vel, isFrozen, isMobile, size, boundaries, forbiddenRect]);
 
   // Randomize starting position and velocity
   useEffect(() => {
@@ -127,13 +165,20 @@ function useBouncingElement(
       height = viewport.height;
     }
     if (!width || !height) return;
-    const xMin = left;
-    const xMax = left + width - size.width;
-    const yMin = top;
-    const yMax = top + height - size.height;
-    const randX = xMin + Math.random() * Math.max(1, xMax - xMin);
-    const randY = yMin + Math.random() * Math.max(1, yMax - yMin);
-    setPos({ x: randX, y: randY });
+    let spawnPos;
+    if (forbiddenRect) {
+      spawnPos = getRandomPositionOutsideInput(size, forbiddenRect);
+    } else {
+      const xMin = left;
+      const xMax = left + width - size.width;
+      const yMin = top;
+      const yMax = top + height - size.height;
+      spawnPos = {
+        x: xMin + Math.random() * Math.max(1, xMax - xMin),
+        y: yMin + Math.random() * Math.max(1, yMax - yMin),
+      };
+    }
+    setPos(spawnPos);
     let vx = (Math.random() - 0.5) * 1.2;
     let vy = (Math.random() - 0.5) * 1.2;
     if (Math.abs(vx) < 0.2) vx = 0.4 * Math.sign(vx) || 0.4;
@@ -146,9 +191,41 @@ function useBouncingElement(
     size.height,
     viewport.width,
     viewport.height,
+    forbiddenRect,
   ]);
 
   return { pos, vel, elementRef, size };
+}
+
+// Custom spawn logic: random position outside the chat input box
+function getRandomPositionOutsideInput(
+  size: {
+    width: number;
+    height: number;
+  },
+  inputBounds?: { left: number; top: number; width: number; height: number }
+) {
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  if (!inputBounds)
+    return {
+      x: Math.random() * (vw - size.width),
+      y: Math.random() * (vh - size.height),
+    };
+  let tries = 0;
+  while (tries < 100) {
+    const x = Math.random() * (vw - size.width);
+    const y = Math.random() * (vh - size.height);
+    const overlaps =
+      x + size.width > inputBounds.left &&
+      x < inputBounds.left + inputBounds.width &&
+      y + size.height > inputBounds.top &&
+      y < inputBounds.top + inputBounds.height;
+    if (!overlaps) return { x, y };
+    tries++;
+  }
+  // fallback
+  return { x: 0, y: 0 };
 }
 
 // BouncingMessage component for user messages
@@ -158,19 +235,22 @@ function BouncingMessage({
   isMobile,
   zIndex = 9998,
   boundaries,
+  forbiddenRect,
 }: {
   text: string;
   isFrozen: boolean;
   isMobile: boolean;
   zIndex?: number;
   boundaries?: { left: number; top: number; width: number; height: number };
+  forbiddenRect?: { left: number; top: number; width: number; height: number };
 }) {
   const { pos, elementRef } = useBouncingElement(
     text,
     isFrozen,
     isMobile,
     zIndex,
-    boundaries
+    boundaries,
+    forbiddenRect
   );
   return (
     <div
@@ -247,27 +327,21 @@ export default function HomePage() {
     Array<{ id: string; text: string; timestamp: number }>
   >([]);
   const chatAreaRef = useRef<HTMLDivElement>(null);
+  const chatInputRef = useRef<HTMLDivElement>(null);
   const [chatBounds, setChatBounds] = useState<{
     left: number;
     top: number;
     width: number;
     height: number;
   } | null>(null);
+  const [inputBounds, setInputBounds] = useState<{
+    left: number;
+    top: number;
+    width: number;
+    height: number;
+  } | null>(null);
 
-  // Sinhala logo bouncing logic (still uses viewport)
-  const sinhalaLogo = useBouncingElement("කල්චර්®", isFrozen, isMobile, 9999);
-
-  // Handle message sending
-  function handleSendMessage(message: string) {
-    const newMessage = {
-      id: Date.now().toString(),
-      text: message,
-      timestamp: Date.now(),
-    };
-    setMessages((prev) => [...prev, newMessage]);
-  }
-
-  // Track chat area boundaries
+  // Track chat area and input box boundaries
   useLayoutEffect(() => {
     function updateBounds() {
       if (chatAreaRef.current) {
@@ -279,11 +353,40 @@ export default function HomePage() {
           height: rect.height,
         });
       }
+      if (chatInputRef.current) {
+        const rect = chatInputRef.current.getBoundingClientRect();
+        setInputBounds({
+          left: rect.left,
+          top: rect.top,
+          width: rect.width,
+          height: rect.height,
+        });
+      }
     }
     updateBounds();
     window.addEventListener("resize", updateBounds);
     return () => window.removeEventListener("resize", updateBounds);
   }, []);
+
+  // Sinhala logo bouncing logic (now bounces off chat input box too)
+  const sinhalaLogo = useBouncingElement(
+    "කල්චර්®",
+    isFrozen,
+    isMobile,
+    9999,
+    undefined,
+    inputBounds || undefined
+  );
+
+  // Handle message sending
+  function handleSendMessage(message: string) {
+    const newMessage = {
+      id: Date.now().toString(),
+      text: message,
+      timestamp: Date.now(),
+    };
+    setMessages((prev) => [...prev, newMessage]);
+  }
 
   return (
     <>
@@ -352,6 +455,7 @@ export default function HomePage() {
       {/* Bouncing user messages inside chat area */}
       {!isHidden &&
         chatBounds &&
+        inputBounds &&
         messages.map((message) => (
           <BouncingMessage
             key={message.id}
@@ -360,6 +464,7 @@ export default function HomePage() {
             isMobile={isMobile}
             zIndex={9998}
             boundaries={chatBounds}
+            forbiddenRect={inputBounds || undefined}
           />
         ))}
       {/* Centered ChatInput with border and no padding */}
@@ -369,7 +474,9 @@ export default function HomePage() {
           className="w-full max-w-md z-10 border-2 border-primary bg-transparent rounded-xl m-0 p-0 flex flex-col justify-center items-center relative overflow-hidden"
           style={{ boxSizing: "border-box" }}
         >
-          <ChatInput onSend={handleSendMessage} placeholder="Type anything" />
+          <div ref={chatInputRef} className="w-full">
+            <ChatInput onSend={handleSendMessage} placeholder="Type anything" />
+          </div>
         </div>
       </div>
     </>
