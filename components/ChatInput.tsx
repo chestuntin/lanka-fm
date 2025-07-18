@@ -1,5 +1,5 @@
 "use client";
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Send, Smile } from "lucide-react";
@@ -17,6 +17,38 @@ export default function ChatInput({
   const [message, setMessage] = useState("");
   const [showEmoji, setShowEmoji] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  // Typewriter effect for placeholder
+  const phrases = ["Type anything", "ටයිප් එනි තින්ග්"];
+  const [currentPhrase, setCurrentPhrase] = useState(0);
+  const [displayed, setDisplayed] = useState("");
+  const [typing, setTyping] = useState(true);
+  const [fade, setFade] = useState(false);
+
+  useEffect(() => {
+    let timeout: NodeJS.Timeout;
+    if (typing) {
+      if (displayed.length < phrases[currentPhrase].length) {
+        timeout = setTimeout(() => {
+          setDisplayed(phrases[currentPhrase].slice(0, displayed.length + 1));
+        }, 60);
+      } else {
+        setTimeout(() => {
+          setFade(true);
+          setTimeout(() => {
+            setFade(false);
+            setDisplayed("");
+            setTyping(false);
+            setTimeout(() => {
+              setCurrentPhrase((p) => (p + 1) % phrases.length);
+              setTyping(true);
+            }, 3000);
+          }, 600); // fade duration
+        }, 1200);
+      }
+    }
+    return () => clearTimeout(timeout);
+  }, [displayed, typing, currentPhrase]);
 
   function handleSend() {
     if (message.trim() === "") return;
@@ -77,8 +109,10 @@ export default function ChatInput({
           value={message}
           onChange={(e) => setMessage(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder={placeholder}
-          className="bg-transparent border-none focus:ring-0 focus-visible:ring-0 rounded-full text-white placeholder:text-muted-foreground flex-1 shadow-none h-9 px-0 text-lg tracking-wide"
+          placeholder={displayed}
+          className={`bg-transparent border-none focus:ring-0 focus-visible:ring-0 rounded-full text-white placeholder:text-muted-foreground/60 flex-1 shadow-none h-9 px-0 text-lg tracking-wide transition-opacity duration-500 ${
+            fade ? "opacity-30" : "opacity-100"
+          }`}
           autoComplete="off"
         />
       </div>
