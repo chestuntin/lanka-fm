@@ -7,6 +7,7 @@ export const metadata = {
   description:
     "Exploring culture, technology, economics, politics, and the arts through thoughtful articles and insights",
   keywords: ["kultjur", "technology", "economics", "politics", "arts", "blog"],
+  viewport: { width: "device-width", initialScale: 1 },
   openGraph: {
     title: "කල්චර් | kultjur",
     description:
