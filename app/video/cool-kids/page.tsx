@@ -3,7 +3,7 @@ import { Card, CardHeader, CardContent } from "@/components/ui/card";
 
 export default function CoolKidsVideoPage() {
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-[#09090b] p-6">
+    <div className="flex flex-col items-center justify-center min-h-[100svh] bg-[#09090b] p-6">
       <Card className="w-full max-w-4xl border border-border shadow-lg rounded-xl">
         <CardHeader />
         <CardContent

@@ -3,7 +3,7 @@ import { DynamicBreadcrumb } from "@/components/ui/dynamic-breadcrumb";
 
 const ArticleLayout = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="min-h-screen bg-[#09090b] text-white flex flex-col justify-between">
+    <div className="min-h-[100svh] bg-[#09090b] text-white flex flex-col justify-between">
       <div className="flex-grow">
         <div className="container mx-auto max-w-4xl mt-12 mb-8">
           <div className="px-6 py-3 mb-4 flex justify-center">

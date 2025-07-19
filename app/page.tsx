@@ -523,7 +523,7 @@ export default function HomePage() {
           />
         ))}
       {/* Centered ChatInput with border and no padding */}
-      <div className="flex items-center justify-center min-h-screen w-full">
+      <div className="flex items-center justify-center min-h-[100svh] w-full">
         <div
           ref={chatAreaRef}
           className="w-full max-w-md z-10 border border-[\#f3f3f3] bg-transparent rounded-xl m-0 p-0 flex flex-col justify-center items-center relative overflow-hidden"
