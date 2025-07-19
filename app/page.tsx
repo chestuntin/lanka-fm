@@ -212,6 +212,10 @@ function getRandomPositionOutsideInput(
   size: { width: number; height: number },
   inputBounds?: { left: number; top: number; width: number; height: number }
 ) {
+  if (typeof window === "undefined") {
+    // On server, just return a safe default
+    return { x: 0, y: 0 };
+  }
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   if (!inputBounds) {
@@ -271,6 +275,10 @@ function clampToViewport(
   y: number,
   size: { width: number; height: number }
 ) {
+  if (typeof window === "undefined") {
+    // On server, just return unclamped values
+    return { x, y };
+  }
   const vw = window.visualViewport?.width || window.innerWidth;
   const vh = window.visualViewport?.height || window.innerHeight;
   return {
