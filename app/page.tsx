@@ -318,7 +318,7 @@ function BouncingMessage({
   return (
     <div
       style={{
-        position: "fixed",
+        position: isMobile ? "absolute" : "fixed",
         left: x,
         top: y,
         fontSize: Math.round(32 * 0.9), // Match Sinhala logo size
@@ -547,7 +547,7 @@ export default function HomePage() {
             <div
               key={"sinhala-" + spawnKey}
               style={{
-                position: "fixed",
+                position: isMobile ? "absolute" : "fixed",
                 left: x,
                 top: y,
                 fontSize: Math.round(32 * 0.9),
@@ -599,7 +599,11 @@ export default function HomePage() {
         <div
           ref={chatAreaRef}
           className="w-full max-w-md z-10 border border-[#f3f3f3] bg-transparent rounded-xl m-0 p-0 flex flex-col justify-center items-center relative overflow-hidden"
-          style={{ boxSizing: "border-box" }}
+          style={{
+            boxSizing: "border-box",
+            position: "relative",
+            overflow: "hidden",
+          }}
         >
           <div ref={chatInputRef} className="w-full">
             <ChatInput onSend={handleSendMessage} placeholder="Type anything" />
