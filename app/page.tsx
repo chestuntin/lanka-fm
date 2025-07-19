@@ -384,14 +384,26 @@ export default function HomePage() {
 
   useEffect(() => {
     function setVh() {
-      document.documentElement.style.setProperty(
-        "--app-vh",
-        `${window.innerHeight}px`
-      );
+      const vh = window.visualViewport?.height || window.innerHeight;
+      document.documentElement.style.setProperty("--app-vh", `${vh}px`);
     }
     setVh();
     window.addEventListener("resize", setVh);
-    return () => window.removeEventListener("resize", setVh);
+    window.addEventListener("orientationchange", setVh);
+    window.addEventListener("scroll", setVh);
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", setVh);
+      window.visualViewport.addEventListener("scroll", setVh);
+    }
+    return () => {
+      window.removeEventListener("resize", setVh);
+      window.removeEventListener("orientationchange", setVh);
+      window.removeEventListener("scroll", setVh);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener("resize", setVh);
+        window.visualViewport.removeEventListener("scroll", setVh);
+      }
+    };
   }, []);
 
   // When inputBounds changes, force respawn of all bouncing elements
