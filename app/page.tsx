@@ -266,6 +266,19 @@ function getRandomPositionOutsideInput(
   };
 }
 
+function clampToViewport(
+  x: number,
+  y: number,
+  size: { width: number; height: number }
+) {
+  const vw = window.visualViewport?.width || window.innerWidth;
+  const vh = window.visualViewport?.height || window.innerHeight;
+  return {
+    x: Math.max(0, Math.min(x, vw - size.width)),
+    y: Math.max(0, Math.min(y, vh - size.height)),
+  };
+}
+
 // BouncingMessage component for user messages
 function BouncingMessage({
   text,
@@ -284,7 +297,7 @@ function BouncingMessage({
   forbiddenRect?: { left: number; top: number; width: number; height: number };
   respawnSignal?: number;
 }) {
-  const { pos, elementRef } = useBouncingElement(
+  const { pos, elementRef, size } = useBouncingElement(
     text,
     isFrozen,
     isMobile,
@@ -293,12 +306,13 @@ function BouncingMessage({
     forbiddenRect,
     respawnSignal
   );
+  const { x, y } = clampToViewport(pos.x, pos.y, size);
   return (
     <div
       style={{
         position: "fixed",
-        left: pos.x,
-        top: pos.y,
+        left: x,
+        top: y,
         fontSize: Math.round(32 * 0.9), // Match Sinhala logo size
         fontWeight: 400,
         color: "#fff",
@@ -499,38 +513,46 @@ export default function HomePage() {
         </div>
       </div>
       {/* Bouncing Sinhala K in viewport */}
-      {!isHidden && (
-        <div
-          key={"sinhala-" + spawnKey}
-          style={{
-            position: "fixed",
-            left: sinhalaLogo.pos.x,
-            top: sinhalaLogo.pos.y,
-            fontSize: Math.round(32 * 0.9),
-            fontWeight: 400,
-            color: "#fff",
-            userSelect: "none",
-            zIndex: 9999,
-            textShadow: "0 2px 8px #000, 0 0 2px #fff",
-            transition: "none",
-            fontFamily: "Noto Sans Sinhala",
-          }}
-          ref={sinhalaLogo.elementRef}
-        >
-          <span>
-            කල්චර්
-            <sup
+      {!isHidden &&
+        (() => {
+          const { x, y } = clampToViewport(
+            sinhalaLogo.pos.x,
+            sinhalaLogo.pos.y,
+            sinhalaLogo.size
+          );
+          return (
+            <div
+              key={"sinhala-" + spawnKey}
               style={{
-                fontSize: "0.6em",
-                verticalAlign: "super",
-                marginLeft: 2,
+                position: "fixed",
+                left: x,
+                top: y,
+                fontSize: Math.round(32 * 0.9),
+                fontWeight: 400,
+                color: "#fff",
+                userSelect: "none",
+                zIndex: 9999,
+                textShadow: "0 2px 8px #000, 0 0 2px #fff",
+                transition: "none",
+                fontFamily: "Noto Sans Sinhala",
               }}
+              ref={sinhalaLogo.elementRef}
             >
-              ®
-            </sup>
-          </span>
-        </div>
-      )}
+              <span>
+                කල්චර්
+                <sup
+                  style={{
+                    fontSize: "0.6em",
+                    verticalAlign: "super",
+                    marginLeft: 2,
+                  }}
+                >
+                  ®
+                </sup>
+              </span>
+            </div>
+          );
+        })()}
       {/* Bouncing user messages inside chat area */}
       {!isHidden &&
         chatBounds &&
