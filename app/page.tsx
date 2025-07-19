@@ -460,7 +460,7 @@ export default function HomePage() {
       />
       {/* Debug: Show Sinhala K position and velocity (top left) */}
       <div
-        className="fixed top-2 left-2 bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-1 sm:text-[14px] text-[11px]"
+        className="hidden sm:block fixed top-2 left-2 bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-1 sm:text-[14px] text-[11px]"
         style={{
           fontSize: undefined, // handled by Tailwind
         }}
