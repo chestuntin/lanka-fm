@@ -382,6 +382,18 @@ export default function HomePage() {
   } | null>(null);
   const [spawnKey, setSpawnKey] = useState(0);
 
+  useEffect(() => {
+    function setVh() {
+      document.documentElement.style.setProperty(
+        "--app-vh",
+        `${window.innerHeight}px`
+      );
+    }
+    setVh();
+    window.addEventListener("resize", setVh);
+    return () => window.removeEventListener("resize", setVh);
+  }, []);
+
   // When inputBounds changes, force respawn of all bouncing elements
   useEffect(() => {
     if (inputBounds && inputBounds.width) {
@@ -523,10 +535,13 @@ export default function HomePage() {
           />
         ))}
       {/* Centered ChatInput with border and no padding */}
-      <div className="flex items-center justify-center min-h-[100svh] w-full">
+      <div
+        className="flex items-center justify-center w-full"
+        style={{ minHeight: "var(--app-vh)" }}
+      >
         <div
           ref={chatAreaRef}
-          className="w-full max-w-md z-10 border border-[\#f3f3f3] bg-transparent rounded-xl m-0 p-0 flex flex-col justify-center items-center relative overflow-hidden"
+          className="w-full max-w-md z-10 border border-[#f3f3f3] bg-transparent rounded-xl m-0 p-0 flex flex-col justify-center items-center relative overflow-hidden"
           style={{ boxSizing: "border-box" }}
         >
           <div ref={chatInputRef} className="w-full">
