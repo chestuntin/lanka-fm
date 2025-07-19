@@ -503,6 +503,24 @@ export default function HomePage() {
     });
   }
 
+  // Prevent unwanted scroll on iOS Chrome by setting overflow: hidden on body and html when messages exist
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const html = document.documentElement;
+    const body = document.body;
+    if (messages.length > 0) {
+      html.style.overflow = "hidden";
+      body.style.overflow = "hidden";
+    } else {
+      html.style.overflow = "";
+      body.style.overflow = "";
+    }
+    return () => {
+      html.style.overflow = "";
+      body.style.overflow = "";
+    };
+  }, [messages.length]);
+
   return (
     <>
       {/* Google Fonts for Sinhala */}
