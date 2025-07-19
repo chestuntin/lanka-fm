@@ -526,7 +526,7 @@ export default function HomePage() {
       <div className="flex items-center justify-center min-h-screen w-full">
         <div
           ref={chatAreaRef}
-          className="w-full max-w-md z-10 border-2 border-primary bg-transparent rounded-xl m-0 p-0 flex flex-col justify-center items-center relative overflow-hidden"
+          className="w-full max-w-md z-10 border border-[\#f3f3f3] bg-transparent rounded-xl m-0 p-0 flex flex-col justify-center items-center relative overflow-hidden"
           style={{ boxSizing: "border-box" }}
         >
           <div ref={chatInputRef} className="w-full">
