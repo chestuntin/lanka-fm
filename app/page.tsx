@@ -485,7 +485,22 @@ export default function HomePage() {
       text: message,
       timestamp: Date.now(),
     };
-    setMessages((prev) => [...prev, newMessage]);
+    setMessages((prev) => {
+      // If this is the first message, force scroll and reflow (iOS Chrome bug workaround)
+      if (
+        prev.length === 0 &&
+        typeof window !== "undefined" &&
+        /Mobi|Android/i.test(navigator.userAgent)
+      ) {
+        setTimeout(() => {
+          window.scrollTo(0, 0);
+          document.body.style.overflow = "hidden";
+          void document.body.offsetHeight; // force reflow
+          document.body.style.overflow = "";
+        }, 0);
+      }
+      return [...prev, newMessage];
+    });
   }
 
   return (
