@@ -62,6 +62,34 @@ function detectCollision(
   );
 }
 
+// Collision logging system
+const collisionLogs: any[] = [];
+let logFrame = 0;
+
+function logCollision(message: string, data: any) {
+  const timestamp = performance.now();
+  collisionLogs.push({
+    frame: logFrame,
+    timestamp,
+    message,
+    data: JSON.parse(JSON.stringify(data)), // Deep clone to capture exact state
+  });
+
+  // Keep only last 100 logs to prevent memory issues
+  if (collisionLogs.length > 100) {
+    collisionLogs.shift();
+  }
+
+  console.log(`[Frame ${logFrame}] ${message}`, data);
+}
+
+// Export logs function for debugging
+(window as any).getCollisionLogs = () => collisionLogs;
+(window as any).clearCollisionLogs = () => {
+  collisionLogs.length = 0;
+  logFrame = 0;
+};
+
 // Simple bounce collision - just like viewport collision
 function handleElementCollision(
   elem1: {
@@ -73,8 +101,26 @@ function handleElementCollision(
     pos: { x: number; y: number };
     vel: { x: number; y: number };
     size: { width: number; height: number };
-  }
+  },
+  elem1Id: string,
+  elem2Id: string
 ) {
+  // Log pre-collision state
+  logCollision("COLLISION_DETECTED", {
+    elem1Id,
+    elem2Id,
+    elem1_pre: {
+      pos: { ...elem1.pos },
+      vel: { ...elem1.vel },
+      size: { ...elem1.size },
+    },
+    elem2_pre: {
+      pos: { ...elem2.pos },
+      vel: { ...elem2.vel },
+      size: { ...elem2.size },
+    },
+  });
+
   // Calculate centers
   const center1 = {
     x: elem1.pos.x + elem1.size.width / 2,
@@ -93,6 +139,21 @@ function handleElementCollision(
   const absDx = Math.abs(dx);
   const absDy = Math.abs(dy);
 
+  logCollision("COLLISION_ANALYSIS", {
+    elem1Id,
+    elem2Id,
+    center1,
+    center2,
+    dx,
+    dy,
+    absDx,
+    absDy,
+    collisionType: absDx > absDy ? "horizontal" : "vertical",
+  });
+
+  const oldVel1 = { ...elem1.vel };
+  const oldVel2 = { ...elem2.vel };
+
   if (absDx > absDy) {
     // Horizontal collision - reverse x velocities
     elem1.vel.x = -Math.abs(elem1.vel.x) * Math.sign(dx);
@@ -105,6 +166,9 @@ function handleElementCollision(
 
   // Small separation to prevent sticking
   const separationDistance = 2;
+  const oldPos1 = { ...elem1.pos };
+  const oldPos2 = { ...elem2.pos };
+
   if (absDx > absDy) {
     // Separate horizontally
     if (dx > 0) {
@@ -124,6 +188,25 @@ function handleElementCollision(
       elem2.pos.y -= separationDistance;
     }
   }
+
+  // Log post-collision state
+  logCollision("COLLISION_RESOLVED", {
+    elem1Id,
+    elem2Id,
+    elem1_changes: {
+      pos_old: oldPos1,
+      pos_new: { ...elem1.pos },
+      vel_old: oldVel1,
+      vel_new: { ...elem1.vel },
+    },
+    elem2_changes: {
+      pos_old: oldPos2,
+      pos_new: { ...elem2.pos },
+      vel_old: oldVel2,
+      vel_new: { ...elem2.vel },
+    },
+    separationDistance,
+  });
 }
 
 // Collision Manager Provider
@@ -139,15 +222,33 @@ function CollisionProvider({ children }: { children: React.ReactNode }) {
       elementsRef.current.delete(id);
     },
     checkCollisions: () => {
-      const elements = Array.from(elementsRef.current.values());
+      logFrame++;
+      const elements = Array.from(elementsRef.current.entries());
+
+      logCollision("FRAME_START", {
+        totalElements: elements.length,
+        elementStates: elements.map(([id, elem]) => ({
+          id,
+          pos: { ...elem.pos },
+          vel: { ...elem.vel },
+          size: { ...elem.size },
+        })),
+      });
 
       for (let i = 0; i < elements.length; i++) {
         for (let j = i + 1; j < elements.length; j++) {
-          const elem1 = elements[i];
-          const elem2 = elements[j];
+          const [id1, elem1] = elements[i];
+          const [id2, elem2] = elements[j];
 
-          if (detectCollision(elem1.pos, elem1.size, elem2.pos, elem2.size)) {
-            handleElementCollision(elem1, elem2);
+          const isColliding = detectCollision(
+            elem1.pos,
+            elem1.size,
+            elem2.pos,
+            elem2.size
+          );
+
+          if (isColliding) {
+            handleElementCollision(elem1, elem2, id1, id2);
 
             // Update positions and velocities immediately
             elem1.setPos({ ...elem1.pos });
@@ -275,7 +376,13 @@ function useBouncingElement(
   useEffect(() => {
     if (isFrozen) return;
     let animationFrame: number;
+    let lastFrameTime = performance.now();
+
     function animate() {
+      const currentTime = performance.now();
+      const deltaTime = currentTime - lastFrameTime;
+      lastFrameTime = currentTime;
+
       // Check for collisions first
       if (collisionManager) {
         collisionManager.checkCollisions();
@@ -296,23 +403,67 @@ function useBouncingElement(
           width = viewport.width;
           height = viewport.height;
         }
-        let nextX = x + vx * (isMobile ? 2 : 1);
-        let nextY = y + vy * (isMobile ? 2 : 1);
+
+        const speedMultiplier = isMobile ? 2 : 1;
+        let nextX = x + vx * speedMultiplier;
+        let nextY = y + vy * speedMultiplier;
+
+        // Log movement before boundary checking
+        if (elementId) {
+          logCollision("ELEMENT_MOVEMENT", {
+            elementId,
+            deltaTime,
+            currentPos: { x, y },
+            currentVel: { x: vx, y: vy },
+            nextPos: { x: nextX, y: nextY },
+            speedMultiplier,
+            boundaries: boundaries || { left, top, width, height },
+          });
+        }
 
         // Bounce off viewport edges - same logic as element collisions
+        let bounced = false;
         if (nextX + size.width >= left + width) {
           vx = -Math.abs(vx);
           nextX = left + width - size.width;
+          bounced = true;
+          if (elementId)
+            logCollision("VIEWPORT_BOUNCE", {
+              elementId,
+              side: "right",
+              newVel: { x: vx, y: vy },
+            });
         } else if (nextX <= left) {
           vx = Math.abs(vx);
           nextX = left;
+          bounced = true;
+          if (elementId)
+            logCollision("VIEWPORT_BOUNCE", {
+              elementId,
+              side: "left",
+              newVel: { x: vx, y: vy },
+            });
         }
         if (nextY + size.height >= top + height) {
           vy = -Math.abs(vy);
           nextY = top + height - size.height;
+          bounced = true;
+          if (elementId)
+            logCollision("VIEWPORT_BOUNCE", {
+              elementId,
+              side: "bottom",
+              newVel: { x: vx, y: vy },
+            });
         } else if (nextY <= top) {
           vy = Math.abs(vy);
           nextY = top;
+          bounced = true;
+          if (elementId)
+            logCollision("VIEWPORT_BOUNCE", {
+              elementId,
+              side: "top",
+              newVel: { x: vx, y: vy },
+            });
         }
 
         // Forbidden area bounce - same simple logic
@@ -332,26 +483,57 @@ function useBouncingElement(
             const distTop = Math.abs(nextY + size.height - fTop);
             const distBottom = Math.abs(nextY - fBottom);
             const minDist = Math.min(distLeft, distRight, distTop, distBottom);
+            let forbiddenBounce = "";
             if (minDist === distLeft) {
               nextX = fLeft - size.width;
               vx = -Math.abs(vx);
+              forbiddenBounce = "left";
             } else if (minDist === distRight) {
               nextX = fRight;
               vx = Math.abs(vx);
+              forbiddenBounce = "right";
             } else if (minDist === distTop) {
               nextY = fTop - size.height;
               vy = -Math.abs(vy);
+              forbiddenBounce = "top";
             } else if (minDist === distBottom) {
               nextY = fBottom;
               vy = Math.abs(vy);
+              forbiddenBounce = "bottom";
             }
+            bounced = true;
+            if (elementId)
+              logCollision("FORBIDDEN_BOUNCE", {
+                elementId,
+                side: forbiddenBounce,
+                newVel: { x: vx, y: vy },
+              });
           }
         }
+
         setVel({ x: vx, y: vy });
-        return {
+        const finalPos = {
           x: Math.max(left, Math.min(nextX, left + width - size.width)),
           y: Math.max(top, Math.min(nextY, top + height - size.height)),
         };
+
+        // Log final position
+        if (
+          elementId &&
+          (bounced ||
+            Math.abs(finalPos.x - x) > 0.1 ||
+            Math.abs(finalPos.y - y) > 0.1)
+        ) {
+          logCollision("FINAL_MOVEMENT", {
+            elementId,
+            oldPos: { x, y },
+            finalPos,
+            bounced,
+            clampingApplied: finalPos.x !== nextX || finalPos.y !== nextY,
+          });
+        }
+
+        return finalPos;
       });
       animationFrame = requestAnimationFrame(animate);
     }
@@ -371,6 +553,7 @@ function useBouncingElement(
     boundaries,
     forbiddenRect,
     collisionManager,
+    elementId,
   ]);
 
   return { pos, vel, elementRef, size, respawn };
@@ -754,6 +937,15 @@ export default function HomePage() {
           {sinhalaLogo.vel.y.toFixed(3)}
         </div>
         <div>Active Elements: {messages.length + 1}</div>
+        <div style={{ fontSize: "10px", marginTop: "4px", color: "#ccc" }}>
+          Open console & run:
+        </div>
+        <div style={{ fontSize: "9px", color: "#ccc" }}>
+          • getCollisionLogs()
+        </div>
+        <div style={{ fontSize: "9px", color: "#ccc" }}>
+          • clearCollisionLogs()
+        </div>
       </div>
       {!isHidden && (
         <div
