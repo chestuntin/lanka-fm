@@ -67,6 +67,8 @@ const collisionLogs: any[] = [];
 let logFrame = 0;
 
 function logCollision(message: string, data: any) {
+  if (typeof window === "undefined") return; // Skip logging during SSR
+
   const timestamp = performance.now();
   collisionLogs.push({
     frame: logFrame,
@@ -83,12 +85,14 @@ function logCollision(message: string, data: any) {
   console.log(`[Frame ${logFrame}] ${message}`, data);
 }
 
-// Export logs function for debugging
-(window as any).getCollisionLogs = () => collisionLogs;
-(window as any).clearCollisionLogs = () => {
-  collisionLogs.length = 0;
-  logFrame = 0;
-};
+// Export logs function for debugging (only on client side)
+if (typeof window !== "undefined") {
+  (window as any).getCollisionLogs = () => collisionLogs;
+  (window as any).clearCollisionLogs = () => {
+    collisionLogs.length = 0;
+    logFrame = 0;
+  };
+}
 
 // Simple bounce collision - just like viewport collision
 function handleElementCollision(
