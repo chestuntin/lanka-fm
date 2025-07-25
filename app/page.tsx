@@ -108,7 +108,6 @@ function useBouncingElement(
   // Initial spawn and respawn on signal
   useEffect(() => {
     respawn();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [respawnSignal, size.width, size.height]);
 
   // Animation loop
@@ -133,7 +132,7 @@ function useBouncingElement(
         }
         let nextX = x + vx * (isMobile ? 2 : 1);
         let nextY = y + vy * (isMobile ? 2 : 1);
-        // Bounce off viewport edges - go to the very edge (0 and max)
+        // Bounce off viewport edges
         if (nextX + size.width >= left + width) {
           vx = -Math.abs(vx);
           nextX = left + width - size.width;
@@ -148,44 +147,34 @@ function useBouncingElement(
           vy = Math.abs(vy);
           nextY = top;
         }
-        // Robust forbiddenRect bounce logic
+        // Forbidden area bounce
         if (forbiddenRect) {
-          const forbiddenLeft = forbiddenRect.left;
-          const forbiddenRight = forbiddenRect.left + forbiddenRect.width;
-          const forbiddenTop = forbiddenRect.top;
-          const forbiddenBottom = forbiddenRect.top + forbiddenRect.height;
-
-          // If the next position would be inside the forbidden area, bounce and move out
+          const fLeft = forbiddenRect.left;
+          const fRight = forbiddenRect.left + forbiddenRect.width;
+          const fTop = forbiddenRect.top;
+          const fBottom = forbiddenRect.top + forbiddenRect.height;
           const overlaps =
-            nextX + size.width > forbiddenLeft &&
-            nextX < forbiddenRight &&
-            nextY + size.height > forbiddenTop &&
-            nextY < forbiddenBottom;
-
+            nextX + size.width > fLeft &&
+            nextX < fRight &&
+            nextY + size.height > fTop &&
+            nextY < fBottom;
           if (overlaps) {
-            // Calculate distances to each edge
-            const distLeft = Math.abs(nextX + size.width - forbiddenLeft);
-            const distRight = Math.abs(nextX - forbiddenRight);
-            const distTop = Math.abs(nextY + size.height - forbiddenTop);
-            const distBottom = Math.abs(nextY - forbiddenBottom);
-
-            // Find the closest edge and eject
+            const distLeft = Math.abs(nextX + size.width - fLeft);
+            const distRight = Math.abs(nextX - fRight);
+            const distTop = Math.abs(nextY + size.height - fTop);
+            const distBottom = Math.abs(nextY - fBottom);
             const minDist = Math.min(distLeft, distRight, distTop, distBottom);
             if (minDist === distLeft) {
-              // Left edge
-              nextX = forbiddenLeft - size.width;
+              nextX = fLeft - size.width;
               vx = -Math.abs(vx);
             } else if (minDist === distRight) {
-              // Right edge
-              nextX = forbiddenRight;
+              nextX = fRight;
               vx = Math.abs(vx);
             } else if (minDist === distTop) {
-              // Top edge
-              nextY = forbiddenTop - size.height;
+              nextY = fTop - size.height;
               vy = -Math.abs(vy);
             } else if (minDist === distBottom) {
-              // Bottom edge
-              nextY = forbiddenBottom;
+              nextY = fBottom;
               vy = Math.abs(vy);
             }
           }
@@ -210,74 +199,55 @@ function useBouncingElement(
   return { pos, vel, elementRef, size, respawn };
 }
 
-// Custom spawn logic: random position outside the chat input box
+// Random spawn outside input
 function getRandomPositionOutsideInput(
   size: { width: number; height: number },
   inputBounds?: { left: number; top: number; width: number; height: number }
 ) {
-  if (typeof window === "undefined") {
-    // On server, just return a safe default
-    return { x: 0, y: 0 };
-  }
-  // Use full viewport dimensions - go to the very edge
+  if (typeof window === "undefined") return { x: 0, y: 0 };
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   if (!inputBounds) {
     return {
-      x: Math.random() * Math.max(0, vw - size.width),
-      y: Math.random() * Math.max(0, vh - size.height),
+      x: Math.random() * (vw - size.width),
+      y: Math.random() * (vh - size.height),
     };
   }
-  // Define the four regions - use full viewport, not chat area
   const regions = [
-    // Above input
     {
       xMin: 0,
-      xMax: Math.max(0, vw - size.width),
+      xMax: vw - size.width,
       yMin: 0,
-      yMax: Math.max(0, inputBounds.top - size.height),
+      yMax: inputBounds.top - size.height,
     },
-    // Below input
     {
       xMin: 0,
-      xMax: Math.max(0, vw - size.width),
+      xMax: vw - size.width,
       yMin: inputBounds.top + inputBounds.height,
-      yMax: Math.max(0, vh - size.height),
+      yMax: vh - size.height,
     },
-    // Left of input
     {
       xMin: 0,
-      xMax: Math.max(0, inputBounds.left - size.width),
+      xMax: inputBounds.left - size.width,
       yMin: inputBounds.top,
-      yMax: Math.max(
-        inputBounds.top,
-        inputBounds.top + inputBounds.height - size.height
-      ),
+      yMax: inputBounds.top + inputBounds.height - size.height,
     },
-    // Right of input
     {
       xMin: inputBounds.left + inputBounds.width,
-      xMax: Math.max(0, vw - size.width),
+      xMax: vw - size.width,
       yMin: inputBounds.top,
-      yMax: Math.max(
-        inputBounds.top,
-        inputBounds.top + inputBounds.height - size.height
-      ),
+      yMax: inputBounds.top + inputBounds.height - size.height,
     },
   ].filter((r) => r.xMax > r.xMin && r.yMax > r.yMin);
-
-  if (regions.length === 0) {
-    // fallback: just use the whole viewport
+  if (!regions.length)
     return {
-      x: Math.random() * Math.max(0, vw - size.width),
-      y: Math.random() * Math.max(0, vh - size.height),
+      x: Math.random() * (vw - size.width),
+      y: Math.random() * (vh - size.height),
     };
-  }
-  // Pick a random region, then a random point in that region
   const region = regions[Math.floor(Math.random() * regions.length)];
   return {
-    x: region.xMin + Math.random() * Math.max(0, region.xMax - region.xMin),
-    y: region.yMin + Math.random() * Math.max(0, region.yMax - region.yMin),
+    x: region.xMin + Math.random() * (region.xMax - region.xMin),
+    y: region.yMin + Math.random() * (region.yMax - region.yMin),
   };
 }
 
@@ -286,11 +256,7 @@ function clampToViewport(
   y: number,
   size: { width: number; height: number }
 ) {
-  if (typeof window === "undefined") {
-    // On server, just return unclamped values
-    return { x, y };
-  }
-  // Use full viewport - no margins, go to the very edge
+  if (typeof window === "undefined") return { x, y };
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   return {
@@ -299,7 +265,7 @@ function clampToViewport(
   };
 }
 
-// BouncingMessage component for user messages
+// BouncingMessage component without padding/borderRadius
 function BouncingMessage({
   text,
   isFrozen,
@@ -327,13 +293,15 @@ function BouncingMessage({
     respawnSignal
   );
   const { x, y } = clampToViewport(pos.x, pos.y, size);
+
   return (
     <div
+      ref={elementRef}
       style={{
         position: isMobile ? "absolute" : "fixed",
         left: x,
         top: y,
-        fontSize: Math.round(32 * 0.9), // Match Sinhala logo size
+        fontSize: Math.round(32 * 0.9),
         fontWeight: 400,
         color: "#fff",
         userSelect: "none",
@@ -341,11 +309,8 @@ function BouncingMessage({
         textShadow: "0 2px 8px #000, 0 0 2px #fff",
         transition: "none",
         fontFamily: "Helvetica Neue, Helvetica, Arial, sans-serif",
-        padding: "8px 12px",
-        borderRadius: "20px",
-        pointerEvents: "none", // Prevent touch interactions
+        pointerEvents: "none",
       }}
-      ref={elementRef}
     >
       {text}
       <sup style={{ fontSize: "0.6em", verticalAlign: "super", marginLeft: 2 }}>
@@ -387,7 +352,7 @@ function ControlPanel({
           <Eye className="h-4 w-4" />
         ) : (
           <EyeOff className="h-4 w-4" />
-        )}
+        )}{" "}
       </Toggle>
     </div>
   );
@@ -420,40 +385,28 @@ export default function HomePage() {
   // Fixed viewport height management for mobile
   useEffect(() => {
     if (!isMobile) return;
-
-    // Store initial viewport height
     const initialHeight = window.innerHeight;
     setInitialViewportHeight(initialHeight);
-
     function handleViewportChange() {
-      // Always use the initial height for mobile to prevent scrolling issues
       document.documentElement.style.setProperty(
         "--app-vh",
         `${initialHeight}px`
       );
     }
-
-    // Set initial height
     handleViewportChange();
-
-    // Use a debounced approach to handle keyboard close
     let timeoutId: NodeJS.Timeout;
     function debouncedHandleViewportChange() {
       clearTimeout(timeoutId);
       timeoutId = setTimeout(handleViewportChange, 100);
     }
-
     window.addEventListener("resize", debouncedHandleViewportChange);
     window.addEventListener("orientationchange", handleViewportChange);
-
-    // Handle visual viewport changes (keyboard open/close)
     if (window.visualViewport) {
       window.visualViewport.addEventListener(
         "resize",
         debouncedHandleViewportChange
       );
     }
-
     return () => {
       clearTimeout(timeoutId);
       window.removeEventListener("resize", debouncedHandleViewportChange);
@@ -470,7 +423,6 @@ export default function HomePage() {
   // Desktop viewport handling
   useEffect(() => {
     if (isMobile) return;
-
     function setVh() {
       const vh = window.innerHeight;
       document.documentElement.style.setProperty("--app-vh", `${vh}px`);
@@ -480,49 +432,29 @@ export default function HomePage() {
     return () => window.removeEventListener("resize", setVh);
   }, [isMobile]);
 
-  // When inputBounds changes, force respawn of all bouncing elements
+  // Respawn on inputBounds change
   useEffect(() => {
-    if (inputBounds && inputBounds.width) {
-      setSpawnKey((k) => k + 1);
-    }
-  }, [
-    inputBounds?.left,
-    inputBounds?.top,
-    inputBounds?.width,
-    inputBounds?.height,
-  ]);
+    if (inputBounds?.width) setSpawnKey((k) => k + 1);
+  }, [inputBounds]);
 
   // Track chat area and input box boundaries
   useLayoutEffect(() => {
     function updateBounds() {
       if (chatAreaRef.current) {
         const rect = chatAreaRef.current.getBoundingClientRect();
-        setChatBounds({
-          left: rect.left,
-          top: rect.top,
-          width: rect.width,
-          height: rect.height,
-        });
+        setChatBounds(rect);
       }
       if (chatInputRef.current) {
         const rect = chatInputRef.current.getBoundingClientRect();
-        setInputBounds({
-          left: rect.left,
-          top: rect.top,
-          width: rect.width,
-          height: rect.height,
-        });
+        setInputBounds(rect);
       }
     }
     updateBounds();
-    const debouncedUpdate = () => {
-      setTimeout(updateBounds, 50);
-    };
-    window.addEventListener("resize", debouncedUpdate);
-    return () => window.removeEventListener("resize", debouncedUpdate);
+    window.addEventListener("resize", () => setTimeout(updateBounds, 50));
+    return () => window.removeEventListener("resize", () => {});
   }, []);
 
-  // Sinhala logo bouncing logic (now bounces off chat input box too)
+  // Sinhala logo bouncing
   const sinhalaLogo = useBouncingElement(
     "කල්චර්®",
     isFrozen,
@@ -533,48 +465,36 @@ export default function HomePage() {
     spawnKey
   );
 
-  // Handle message sending with keyboard close fix
   function handleSendMessage(message: string) {
     const newMessage = {
       id: Date.now().toString(),
       text: message,
       timestamp: Date.now(),
     };
-
     setMessages((prev) => {
       const newMessages = [...prev, newMessage];
-
-      // Mobile keyboard close handling
       if (isMobile) {
         setTimeout(() => {
-          // Force scroll to top and maintain fixed height
           window.scrollTo(0, 0);
           document.documentElement.style.setProperty(
             "--app-vh",
             `${initialViewportHeight}px`
           );
-
-          // Ensure no scrolling
           document.documentElement.style.overflow = "hidden";
           document.body.style.overflow = "hidden";
           document.body.style.height = `${initialViewportHeight}px`;
-
-          // Force layout recalculation
           void document.body.offsetHeight;
         }, 0);
       }
-
       return newMessages;
     });
   }
 
-  // Prevent scrolling on mobile when messages exist
+  // Prevent scrolling on mobile
   useEffect(() => {
     if (!isMobile) return;
-
     const html = document.documentElement;
     const body = document.body;
-
     if (messages.length > 0) {
       html.style.overflow = "hidden";
       html.style.height = `${initialViewportHeight || window.innerHeight}px`;
@@ -594,7 +514,6 @@ export default function HomePage() {
       body.style.top = "";
       body.style.left = "";
     }
-
     return () => {
       html.style.overflow = "";
       html.style.height = "";
@@ -607,59 +526,44 @@ export default function HomePage() {
     };
   }, [messages.length, isMobile, initialViewportHeight]);
 
-  // Prevent touch scroll on bouncing elements
+  // Prevent touch scroll on logos
   useEffect(() => {
-    const preventTouchScroll = (e: TouchEvent) => {
-      // Allow touch on input elements
-      const target = e.target as HTMLElement;
+    const preventTouch = (e: TouchEvent) => {
+      const t = e.target as HTMLElement;
       if (
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.closest("button")
-      ) {
+        t.tagName === "INPUT" ||
+        t.tagName === "TEXTAREA" ||
+        t.closest("button")
+      )
         return;
-      }
       e.preventDefault();
     };
-
     if (isMobile && messages.length > 0) {
-      document.addEventListener("touchmove", preventTouchScroll, {
-        passive: false,
-      });
-      document.addEventListener("touchstart", preventTouchScroll, {
-        passive: false,
-      });
+      document.addEventListener("touchmove", preventTouch, { passive: false });
+      document.addEventListener("touchstart", preventTouch, { passive: false });
     }
-
     return () => {
-      document.removeEventListener("touchmove", preventTouchScroll);
-      document.removeEventListener("touchstart", preventTouchScroll);
+      document.removeEventListener("touchmove", preventTouch);
+      document.removeEventListener("touchstart", preventTouch);
     };
   }, [isMobile, messages.length]);
 
   return (
     <>
-      {/* Google Fonts for Sinhala */}
       <Head>
         <link
           href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@700&display=swap"
           rel="stylesheet"
         />
       </Head>
-      {/* Control Panel */}
       <ControlPanel
         isFrozen={isFrozen}
         setIsFrozen={setIsFrozen}
         isHidden={isHidden}
         setIsHidden={setIsHidden}
       />
-      {/* Debug: Show Sinhala K position and velocity (top left) */}
-      <div
-        className="hidden sm:block fixed top-2 left-2 bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-1 sm:text-[14px] text-[11px]"
-        style={{
-          fontSize: undefined, // handled by Tailwind
-        }}
-      >
+      {/* Debug info */}
+      <div className="hidden sm:block fixed top-2 left-2 bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-1 text-[11px]">
         <div>
           කල්චර්® Position: x={sinhalaLogo.pos.x.toFixed(1)}, y=
           {sinhalaLogo.pos.y.toFixed(1)}
@@ -669,64 +573,52 @@ export default function HomePage() {
           {sinhalaLogo.vel.y.toFixed(3)}
         </div>
       </div>
-      {/* Bouncing Sinhala K in viewport */}
-      {!isHidden &&
-        (() => {
-          const { x, y } = clampToViewport(
-            sinhalaLogo.pos.x,
-            sinhalaLogo.pos.y,
-            sinhalaLogo.size
-          );
-          return (
-            <div
-              key={"sinhala-" + spawnKey}
+      {!isHidden && (
+        <div
+          key={"sinhala-" + spawnKey}
+          style={{
+            position: isMobile ? "absolute" : "fixed",
+            left: sinhalaLogo.pos.x,
+            top: sinhalaLogo.pos.y,
+            fontSize: Math.round(32 * 0.9),
+            fontWeight: 400,
+            color: "#fff",
+            userSelect: "none",
+            zIndex: 9999,
+            textShadow: "0 2px 8px #000, 0 0 2px #fff",
+            transition: "none",
+            fontFamily: "Noto Sans Sinhala",
+            pointerEvents: "none",
+          }}
+          ref={sinhalaLogo.elementRef}
+        >
+          <span>
+            කල්චර්
+            <sup
               style={{
-                position: isMobile ? "absolute" : "fixed",
-                left: x,
-                top: y,
-                fontSize: Math.round(32 * 0.9),
-                fontWeight: 400,
-                color: "#fff",
-                userSelect: "none",
-                zIndex: 9999,
-                textShadow: "0 2px 8px #000, 0 0 2px #fff",
-                transition: "none",
-                fontFamily: "Noto Sans Sinhala",
-                pointerEvents: "none", // Prevent touch interactions
+                fontSize: "0.6em",
+                verticalAlign: "super",
+                marginLeft: 2,
               }}
-              ref={sinhalaLogo.elementRef}
             >
-              <span>
-                කල්චර්
-                <sup
-                  style={{
-                    fontSize: "0.6em",
-                    verticalAlign: "super",
-                    marginLeft: 2,
-                  }}
-                >
-                  ®
-                </sup>
-              </span>
-            </div>
-          );
-        })()}
-      {/* Bouncing user messages inside chat area */}
+              ®
+            </sup>
+          </span>
+        </div>
+      )}
       {!isHidden &&
         chatBounds &&
         inputBounds &&
-        messages.map((message) => (
+        messages.map((m) => (
           <BouncingMessage
-            key={message.id + "-" + spawnKey}
-            text={message.text}
+            key={m.id + "-" + spawnKey}
+            text={m.text}
             isFrozen={isFrozen}
             isMobile={isMobile}
-            zIndex={9998}
-            forbiddenRect={inputBounds || undefined}
+            forbiddenRect={inputBounds}
             respawnSignal={spawnKey}
           />
         ))}
-      {/* Centered ChatInput with border and no padding */}
       <div
         className="flex items-center justify-center w-full"
         style={{ minHeight: "var(--app-vh)" }}
