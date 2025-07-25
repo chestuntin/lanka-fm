@@ -46,7 +46,7 @@ function useBouncingElement(
   useEffect(() => {
     if (boundaries) return;
     function updateSize() {
-      // Use consistent viewport measurement
+      // Use full viewport dimensions - go to the very edge
       const width = window.innerWidth;
       const height = window.innerHeight;
       setViewport({ width, height });
@@ -133,7 +133,7 @@ function useBouncingElement(
         }
         let nextX = x + vx * (isMobile ? 2 : 1);
         let nextY = y + vy * (isMobile ? 2 : 1);
-        // Bounce off boundaries
+        // Bounce off viewport edges - go to the very edge (0 and max)
         if (nextX + size.width >= left + width) {
           vx = -Math.abs(vx);
           nextX = left + width - size.width;
@@ -219,57 +219,65 @@ function getRandomPositionOutsideInput(
     // On server, just return a safe default
     return { x: 0, y: 0 };
   }
+  // Use full viewport dimensions - go to the very edge
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   if (!inputBounds) {
     return {
-      x: Math.random() * (vw - size.width),
-      y: Math.random() * (vh - size.height),
+      x: Math.random() * Math.max(0, vw - size.width),
+      y: Math.random() * Math.max(0, vh - size.height),
     };
   }
-  // Define the four regions
+  // Define the four regions - use full viewport, not chat area
   const regions = [
-    // Above
+    // Above input
     {
       xMin: 0,
-      xMax: vw - size.width,
+      xMax: Math.max(0, vw - size.width),
       yMin: 0,
       yMax: Math.max(0, inputBounds.top - size.height),
     },
-    // Below
+    // Below input
     {
       xMin: 0,
-      xMax: vw - size.width,
+      xMax: Math.max(0, vw - size.width),
       yMin: inputBounds.top + inputBounds.height,
-      yMax: vh - size.height,
+      yMax: Math.max(0, vh - size.height),
     },
-    // Left
+    // Left of input
     {
       xMin: 0,
       xMax: Math.max(0, inputBounds.left - size.width),
       yMin: inputBounds.top,
-      yMax: inputBounds.top + inputBounds.height - size.height,
+      yMax: Math.max(
+        inputBounds.top,
+        inputBounds.top + inputBounds.height - size.height
+      ),
     },
-    // Right
+    // Right of input
     {
       xMin: inputBounds.left + inputBounds.width,
-      xMax: vw - size.width,
+      xMax: Math.max(0, vw - size.width),
       yMin: inputBounds.top,
-      yMax: inputBounds.top + inputBounds.height - size.height,
+      yMax: Math.max(
+        inputBounds.top,
+        inputBounds.top + inputBounds.height - size.height
+      ),
     },
   ].filter((r) => r.xMax > r.xMin && r.yMax > r.yMin);
+
   if (regions.length === 0) {
     // fallback: just use the whole viewport
     return {
-      x: Math.random() * (vw - size.width),
-      y: Math.random() * (vh - size.height),
+      x: Math.random() * Math.max(0, vw - size.width),
+      y: Math.random() * Math.max(0, vh - size.height),
     };
   }
   // Pick a random region, then a random point in that region
   const region = regions[Math.floor(Math.random() * regions.length)];
   return {
-    x: region.xMin + Math.random() * (region.xMax - region.xMin),
-    y: region.yMin + Math.random() * (region.yMax - region.yMin),
+    x: region.xMin + Math.random() * Math.max(0, region.xMax - region.xMin),
+    y: region.yMin + Math.random() * Math.max(0, region.yMax - region.yMin),
   };
 }
 
@@ -282,6 +290,7 @@ function clampToViewport(
     // On server, just return unclamped values
     return { x, y };
   }
+  // Use full viewport - no margins, go to the very edge
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   return {
