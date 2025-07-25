@@ -46,7 +46,10 @@ function useBouncingElement(
   useEffect(() => {
     if (boundaries) return;
     function updateSize() {
-      setViewport({ width: window.innerWidth, height: window.innerHeight });
+      // Use consistent viewport measurement
+      const width = window.innerWidth;
+      const height = window.innerHeight;
+      setViewport({ width, height });
     }
     updateSize();
     window.addEventListener("resize", updateSize);
@@ -279,8 +282,8 @@ function clampToViewport(
     // On server, just return unclamped values
     return { x, y };
   }
-  const vw = window.visualViewport?.width || window.innerWidth;
-  const vh = window.visualViewport?.height || window.innerHeight;
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
   return {
     x: Math.max(0, Math.min(x, vw - size.width)),
     y: Math.max(0, Math.min(y, vh - size.height)),
@@ -331,7 +334,7 @@ function BouncingMessage({
         fontFamily: "Helvetica Neue, Helvetica, Arial, sans-serif",
         padding: "8px 12px",
         borderRadius: "20px",
-        // border removed
+        pointerEvents: "none", // Prevent touch interactions
       }}
       ref={elementRef}
     >
@@ -403,30 +406,70 @@ export default function HomePage() {
     height: number;
   } | null>(null);
   const [spawnKey, setSpawnKey] = useState(0);
+  const [initialViewportHeight, setInitialViewportHeight] = useState<number>(0);
 
+  // Fixed viewport height management for mobile
   useEffect(() => {
+    if (!isMobile) return;
+
+    // Store initial viewport height
+    const initialHeight = window.innerHeight;
+    setInitialViewportHeight(initialHeight);
+
+    function handleViewportChange() {
+      // Always use the initial height for mobile to prevent scrolling issues
+      document.documentElement.style.setProperty(
+        "--app-vh",
+        `${initialHeight}px`
+      );
+    }
+
+    // Set initial height
+    handleViewportChange();
+
+    // Use a debounced approach to handle keyboard close
+    let timeoutId: NodeJS.Timeout;
+    function debouncedHandleViewportChange() {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(handleViewportChange, 100);
+    }
+
+    window.addEventListener("resize", debouncedHandleViewportChange);
+    window.addEventListener("orientationchange", handleViewportChange);
+
+    // Handle visual viewport changes (keyboard open/close)
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener(
+        "resize",
+        debouncedHandleViewportChange
+      );
+    }
+
+    return () => {
+      clearTimeout(timeoutId);
+      window.removeEventListener("resize", debouncedHandleViewportChange);
+      window.removeEventListener("orientationchange", handleViewportChange);
+      if (window.visualViewport) {
+        window.visualViewport.removeEventListener(
+          "resize",
+          debouncedHandleViewportChange
+        );
+      }
+    };
+  }, [isMobile]);
+
+  // Desktop viewport handling
+  useEffect(() => {
+    if (isMobile) return;
+
     function setVh() {
-      const vh = window.visualViewport?.height || window.innerHeight;
+      const vh = window.innerHeight;
       document.documentElement.style.setProperty("--app-vh", `${vh}px`);
     }
     setVh();
     window.addEventListener("resize", setVh);
-    window.addEventListener("orientationchange", setVh);
-    window.addEventListener("scroll", setVh);
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener("resize", setVh);
-      window.visualViewport.addEventListener("scroll", setVh);
-    }
-    return () => {
-      window.removeEventListener("resize", setVh);
-      window.removeEventListener("orientationchange", setVh);
-      window.removeEventListener("scroll", setVh);
-      if (window.visualViewport) {
-        window.visualViewport.removeEventListener("resize", setVh);
-        window.visualViewport.removeEventListener("scroll", setVh);
-      }
-    };
-  }, []);
+    return () => window.removeEventListener("resize", setVh);
+  }, [isMobile]);
 
   // When inputBounds changes, force respawn of all bouncing elements
   useEffect(() => {
@@ -463,8 +506,11 @@ export default function HomePage() {
       }
     }
     updateBounds();
-    window.addEventListener("resize", updateBounds);
-    return () => window.removeEventListener("resize", updateBounds);
+    const debouncedUpdate = () => {
+      setTimeout(updateBounds, 50);
+    };
+    window.addEventListener("resize", debouncedUpdate);
+    return () => window.removeEventListener("resize", debouncedUpdate);
   }, []);
 
   // Sinhala logo bouncing logic (now bounces off chat input box too)
@@ -478,48 +524,109 @@ export default function HomePage() {
     spawnKey
   );
 
-  // Handle message sending
+  // Handle message sending with keyboard close fix
   function handleSendMessage(message: string) {
     const newMessage = {
       id: Date.now().toString(),
       text: message,
       timestamp: Date.now(),
     };
+
     setMessages((prev) => {
-      // If this is the first message, force scroll and reflow (iOS Chrome bug workaround)
-      if (
-        prev.length === 0 &&
-        typeof window !== "undefined" &&
-        /Mobi|Android/i.test(navigator.userAgent)
-      ) {
+      const newMessages = [...prev, newMessage];
+
+      // Mobile keyboard close handling
+      if (isMobile) {
         setTimeout(() => {
+          // Force scroll to top and maintain fixed height
           window.scrollTo(0, 0);
+          document.documentElement.style.setProperty(
+            "--app-vh",
+            `${initialViewportHeight}px`
+          );
+
+          // Ensure no scrolling
+          document.documentElement.style.overflow = "hidden";
           document.body.style.overflow = "hidden";
-          void document.body.offsetHeight; // force reflow
-          document.body.style.overflow = "";
+          document.body.style.height = `${initialViewportHeight}px`;
+
+          // Force layout recalculation
+          void document.body.offsetHeight;
         }, 0);
       }
-      return [...prev, newMessage];
+
+      return newMessages;
     });
   }
 
-  // Prevent unwanted scroll on iOS Chrome by setting overflow: hidden on body and html when messages exist
+  // Prevent scrolling on mobile when messages exist
   useEffect(() => {
-    if (typeof window === "undefined") return;
+    if (!isMobile) return;
+
     const html = document.documentElement;
     const body = document.body;
+
     if (messages.length > 0) {
       html.style.overflow = "hidden";
+      html.style.height = `${initialViewportHeight || window.innerHeight}px`;
       body.style.overflow = "hidden";
+      body.style.height = `${initialViewportHeight || window.innerHeight}px`;
+      body.style.position = "fixed";
+      body.style.width = "100%";
+      body.style.top = "0";
+      body.style.left = "0";
     } else {
       html.style.overflow = "";
+      html.style.height = "";
       body.style.overflow = "";
+      body.style.height = "";
+      body.style.position = "";
+      body.style.width = "";
+      body.style.top = "";
+      body.style.left = "";
     }
+
     return () => {
       html.style.overflow = "";
+      html.style.height = "";
       body.style.overflow = "";
+      body.style.height = "";
+      body.style.position = "";
+      body.style.width = "";
+      body.style.top = "";
+      body.style.left = "";
     };
-  }, [messages.length]);
+  }, [messages.length, isMobile, initialViewportHeight]);
+
+  // Prevent touch scroll on bouncing elements
+  useEffect(() => {
+    const preventTouchScroll = (e: TouchEvent) => {
+      // Allow touch on input elements
+      const target = e.target as HTMLElement;
+      if (
+        target.tagName === "INPUT" ||
+        target.tagName === "TEXTAREA" ||
+        target.closest("button")
+      ) {
+        return;
+      }
+      e.preventDefault();
+    };
+
+    if (isMobile && messages.length > 0) {
+      document.addEventListener("touchmove", preventTouchScroll, {
+        passive: false,
+      });
+      document.addEventListener("touchstart", preventTouchScroll, {
+        passive: false,
+      });
+    }
+
+    return () => {
+      document.removeEventListener("touchmove", preventTouchScroll);
+      document.removeEventListener("touchstart", preventTouchScroll);
+    };
+  }, [isMobile, messages.length]);
 
   return (
     <>
@@ -576,6 +683,7 @@ export default function HomePage() {
                 textShadow: "0 2px 8px #000, 0 0 2px #fff",
                 transition: "none",
                 fontFamily: "Noto Sans Sinhala",
+                pointerEvents: "none", // Prevent touch interactions
               }}
               ref={sinhalaLogo.elementRef}
             >
