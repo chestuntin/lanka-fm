@@ -632,7 +632,15 @@ export default function HomePage() {
             overflow: "hidden",
           }}
         >
-          <div ref={chatInputRef} className="w-full">
+          <div
+            ref={chatInputRef}
+            className="w-full"
+            style={{
+              outline: "2px dashed #f00", // 🔍 visual debug outline
+              margin: 0, // explicitly zero out margins
+              padding: 0, // explicitly zero out padding
+            }}
+          >
             <ChatInput onSend={handleSendMessage} placeholder="Type anything" />
           </div>
         </div>
