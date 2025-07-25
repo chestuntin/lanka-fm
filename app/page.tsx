@@ -7,10 +7,32 @@ import {
   useState,
   useLayoutEffect,
   useCallback,
+  createContext,
+  useContext,
 } from "react";
 import Head from "next/head";
 import { Snowflake, Eye, EyeOff } from "lucide-react";
 import ChatInput from "@/components/ChatInput";
+
+// Global collision manager context
+interface CollisionManager {
+  elements: Map<
+    string,
+    {
+      pos: { x: number; y: number };
+      vel: { x: number; y: number };
+      size: { width: number; height: number };
+      mass: number;
+      setPos: (pos: { x: number; y: number }) => void;
+      setVel: (vel: { x: number; y: number }) => void;
+    }
+  >;
+  registerElement: (id: string, element: any) => void;
+  unregisterElement: (id: string) => void;
+  checkCollisions: () => void;
+}
+
+const CollisionContext = createContext<CollisionManager | null>(null);
 
 // Utility: detect mobile (stateful)
 function useIsMobile() {
@@ -26,7 +48,131 @@ function useIsMobile() {
   return isMobile;
 }
 
-// Custom hook for bouncing elements
+// Physics collision detection and response
+function detectCollision(
+  pos1: { x: number; y: number },
+  size1: { width: number; height: number },
+  pos2: { x: number; y: number },
+  size2: { width: number; height: number }
+): boolean {
+  return (
+    pos1.x < pos2.x + size2.width &&
+    pos1.x + size1.width > pos2.x &&
+    pos1.y < pos2.y + size2.height &&
+    pos1.y + size1.height > pos2.y
+  );
+}
+
+function resolveCollision(
+  obj1: {
+    pos: { x: number; y: number };
+    vel: { x: number; y: number };
+    size: { width: number; height: number };
+    mass: number;
+  },
+  obj2: {
+    pos: { x: number; y: number };
+    vel: { x: number; y: number };
+    size: { width: number; height: number };
+    mass: number;
+  }
+) {
+  // Calculate centers
+  const center1 = {
+    x: obj1.pos.x + obj1.size.width / 2,
+    y: obj1.pos.y + obj1.size.height / 2,
+  };
+  const center2 = {
+    x: obj2.pos.x + obj2.size.width / 2,
+    y: obj2.pos.y + obj2.size.height / 2,
+  };
+
+  // Calculate collision normal
+  const dx = center2.x - center1.x;
+  const dy = center2.y - center1.y;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+
+  if (distance === 0) return; // Avoid division by zero
+
+  const nx = dx / distance;
+  const ny = dy / distance;
+
+  // Relative velocity
+  const dvx = obj2.vel.x - obj1.vel.x;
+  const dvy = obj2.vel.y - obj1.vel.y;
+
+  // Relative velocity in collision normal direction
+  const dvn = dvx * nx + dvy * ny;
+
+  // Do not resolve if velocities are separating
+  if (dvn > 0) return;
+
+  // Collision impulse
+  const impulse = (2 * dvn) / (obj1.mass + obj2.mass);
+
+  // Update velocities with some energy loss for more realistic bouncing
+  const restitution = 0.8;
+  obj1.vel.x += impulse * obj2.mass * nx * restitution;
+  obj1.vel.y += impulse * obj2.mass * ny * restitution;
+  obj2.vel.x -= impulse * obj1.mass * nx * restitution;
+  obj2.vel.y -= impulse * obj1.mass * ny * restitution;
+
+  // Separate overlapping objects
+  const overlap =
+    (obj1.size.width + obj1.size.height + obj2.size.width + obj2.size.height) /
+      4 -
+    distance;
+  if (overlap > 0) {
+    const separation = overlap / 2;
+    obj1.pos.x -= nx * separation;
+    obj1.pos.y -= ny * separation;
+    obj2.pos.x += nx * separation;
+    obj2.pos.y += ny * separation;
+  }
+}
+
+// Collision Manager Provider
+function CollisionProvider({ children }: { children: React.ReactNode }) {
+  const elementsRef = useRef<Map<string, any>>(new Map());
+
+  const manager: CollisionManager = {
+    elements: elementsRef.current,
+    registerElement: (id: string, element: any) => {
+      elementsRef.current.set(id, element);
+    },
+    unregisterElement: (id: string) => {
+      elementsRef.current.delete(id);
+    },
+    checkCollisions: () => {
+      const elements = Array.from(elementsRef.current.values());
+
+      for (let i = 0; i < elements.length; i++) {
+        for (let j = i + 1; j < elements.length; j++) {
+          const elem1 = elements[i];
+          const elem2 = elements[j];
+
+          if (detectCollision(elem1.pos, elem1.size, elem2.pos, elem2.size)) {
+            resolveCollision(elem1, elem2);
+
+            // Update positions immediately to prevent sticking
+            elem1.setPos({ ...elem1.pos });
+            elem1.setVel({ ...elem1.vel });
+            elem2.setPos({ ...elem2.pos });
+            elem2.setVel({ ...elem2.vel });
+          }
+        }
+      }
+    },
+  };
+
+  return (
+    <CollisionContext.Provider value={manager}>
+      {children}
+    </CollisionContext.Provider>
+  );
+}
+
+// Custom hook for bouncing elements with collision support
 function useBouncingElement(
   content: string,
   isFrozen: boolean,
@@ -34,19 +180,43 @@ function useBouncingElement(
   zIndex: number = 9999,
   boundaries?: { left: number; top: number; width: number; height: number },
   forbiddenRect?: { left: number; top: number; width: number; height: number },
-  respawnSignal?: number
+  respawnSignal?: number,
+  elementId?: string
 ) {
   const [pos, setPos] = useState({ x: 50, y: 50 });
   const [vel, setVel] = useState({ x: 0.4, y: 0.4 });
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const [size, setSize] = useState({ width: 48, height: 48 });
   const elementRef = useRef<HTMLDivElement>(null);
+  const collisionManager = useContext(CollisionContext);
+
+  // Calculate mass based on content length (longer text = more mass)
+  const mass = Math.max(1, content.length * 0.1);
+
+  // Register with collision manager
+  useEffect(() => {
+    if (!collisionManager || !elementId) return;
+
+    const element = {
+      pos,
+      vel,
+      size,
+      mass,
+      setPos,
+      setVel,
+    };
+
+    collisionManager.registerElement(elementId, element);
+
+    return () => {
+      collisionManager.unregisterElement(elementId);
+    };
+  }, [collisionManager, elementId, pos, vel, size, mass]);
 
   // Update viewport size (for Sinhala logo only)
   useEffect(() => {
     if (boundaries) return;
     function updateSize() {
-      // Use full viewport dimensions - go to the very edge
       const width = window.innerWidth;
       const height = window.innerHeight;
       setViewport({ width, height });
@@ -115,6 +285,11 @@ function useBouncingElement(
     if (isFrozen) return;
     let animationFrame: number;
     function animate() {
+      // Check for collisions first
+      if (collisionManager) {
+        collisionManager.checkCollisions();
+      }
+
       setPos((prev) => {
         let { x, y } = prev;
         let { x: vx, y: vy } = vel;
@@ -132,6 +307,7 @@ function useBouncingElement(
         }
         let nextX = x + vx * (isMobile ? 2 : 1);
         let nextY = y + vy * (isMobile ? 2 : 1);
+
         // Bounce off viewport edges
         if (nextX + size.width >= left + width) {
           vx = -Math.abs(vx);
@@ -147,6 +323,7 @@ function useBouncingElement(
           vy = Math.abs(vy);
           nextY = top;
         }
+
         // Forbidden area bounce
         if (forbiddenRect) {
           const fLeft = forbiddenRect.left;
@@ -194,7 +371,16 @@ function useBouncingElement(
       animationFrame = requestAnimationFrame(animate);
     }
     return () => cancelAnimationFrame(animationFrame);
-  }, [viewport, vel, isFrozen, isMobile, size, boundaries, forbiddenRect]);
+  }, [
+    viewport,
+    vel,
+    isFrozen,
+    isMobile,
+    size,
+    boundaries,
+    forbiddenRect,
+    collisionManager,
+  ]);
 
   return { pos, vel, elementRef, size, respawn };
 }
@@ -265,7 +451,7 @@ function clampToViewport(
   };
 }
 
-// BouncingMessage component without padding/borderRadius
+// BouncingMessage component
 function BouncingMessage({
   text,
   isFrozen,
@@ -274,6 +460,7 @@ function BouncingMessage({
   boundaries,
   forbiddenRect,
   respawnSignal,
+  messageId,
 }: {
   text: string;
   isFrozen: boolean;
@@ -282,6 +469,7 @@ function BouncingMessage({
   boundaries?: { left: number; top: number; width: number; height: number };
   forbiddenRect?: { left: number; top: number; width: number; height: number };
   respawnSignal?: number;
+  messageId: string;
 }) {
   const { pos, elementRef, size } = useBouncingElement(
     text,
@@ -290,7 +478,8 @@ function BouncingMessage({
     zIndex,
     boundaries,
     forbiddenRect,
-    respawnSignal
+    respawnSignal,
+    messageId
   );
   const { x, y } = clampToViewport(pos.x, pos.y, size);
 
@@ -462,7 +651,8 @@ export default function HomePage() {
     9999,
     undefined,
     inputBounds || undefined,
-    spawnKey
+    spawnKey,
+    "sinhala-logo"
   );
 
   function handleSendMessage(message: string) {
@@ -549,7 +739,7 @@ export default function HomePage() {
   }, [isMobile, messages.length]);
 
   return (
-    <>
+    <CollisionProvider>
       <Head>
         <link
           href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@700&display=swap"
@@ -572,6 +762,7 @@ export default function HomePage() {
           කල්චර්® Velocity: vx={sinhalaLogo.vel.x.toFixed(3)}, vy=
           {sinhalaLogo.vel.y.toFixed(3)}
         </div>
+        <div>Active Elements: {messages.length + 1}</div>
       </div>
       {!isHidden && (
         <div
@@ -617,6 +808,7 @@ export default function HomePage() {
             isMobile={isMobile}
             forbiddenRect={inputBounds}
             respawnSignal={spawnKey}
+            messageId={m.id}
           />
         ))}
       <div
@@ -636,15 +828,15 @@ export default function HomePage() {
             ref={chatInputRef}
             className="w-full"
             style={{
-              outline: "2px dashed #f00", // 🔍 visual debug outline
-              margin: 0, // explicitly zero out margins
-              padding: 0, // explicitly zero out padding
+              outline: "2px dashed #f00",
+              margin: 0,
+              padding: 0,
             }}
           >
             <ChatInput onSend={handleSendMessage} placeholder="Type anything" />
           </div>
         </div>
       </div>
-    </>
+    </CollisionProvider>
   );
 }
