@@ -22,7 +22,6 @@ interface CollisionManager {
       pos: { x: number; y: number };
       vel: { x: number; y: number };
       size: { width: number; height: number };
-      mass: number;
       setPos: (pos: { x: number; y: number }) => void;
       setVel: (vel: { x: number; y: number }) => void;
     }
@@ -48,7 +47,7 @@ function useIsMobile() {
   return isMobile;
 }
 
-// Physics collision detection and response
+// Simple collision detection
 function detectCollision(
   pos1: { x: number; y: number },
   size1: { width: number; height: number },
@@ -63,71 +62,67 @@ function detectCollision(
   );
 }
 
-function resolveCollision(
-  obj1: {
+// Simple bounce collision - just like viewport collision
+function handleElementCollision(
+  elem1: {
     pos: { x: number; y: number };
     vel: { x: number; y: number };
     size: { width: number; height: number };
-    mass: number;
   },
-  obj2: {
+  elem2: {
     pos: { x: number; y: number };
     vel: { x: number; y: number };
     size: { width: number; height: number };
-    mass: number;
   }
 ) {
   // Calculate centers
   const center1 = {
-    x: obj1.pos.x + obj1.size.width / 2,
-    y: obj1.pos.y + obj1.size.height / 2,
+    x: elem1.pos.x + elem1.size.width / 2,
+    y: elem1.pos.y + elem1.size.height / 2,
   };
   const center2 = {
-    x: obj2.pos.x + obj2.size.width / 2,
-    y: obj2.pos.y + obj2.size.height / 2,
+    x: elem2.pos.x + elem2.size.width / 2,
+    y: elem2.pos.y + elem2.size.height / 2,
   };
 
-  // Calculate collision normal
+  // Calculate which side the collision happened on
   const dx = center2.x - center1.x;
   const dy = center2.y - center1.y;
-  const distance = Math.sqrt(dx * dx + dy * dy);
 
-  if (distance === 0) return; // Avoid division by zero
+  // Determine if collision is more horizontal or vertical
+  const absDx = Math.abs(dx);
+  const absDy = Math.abs(dy);
 
-  const nx = dx / distance;
-  const ny = dy / distance;
+  if (absDx > absDy) {
+    // Horizontal collision - reverse x velocities
+    elem1.vel.x = -Math.abs(elem1.vel.x) * Math.sign(dx);
+    elem2.vel.x = Math.abs(elem2.vel.x) * Math.sign(dx);
+  } else {
+    // Vertical collision - reverse y velocities
+    elem1.vel.y = -Math.abs(elem1.vel.y) * Math.sign(dy);
+    elem2.vel.y = Math.abs(elem2.vel.y) * Math.sign(dy);
+  }
 
-  // Relative velocity
-  const dvx = obj2.vel.x - obj1.vel.x;
-  const dvy = obj2.vel.y - obj1.vel.y;
-
-  // Relative velocity in collision normal direction
-  const dvn = dvx * nx + dvy * ny;
-
-  // Do not resolve if velocities are separating
-  if (dvn > 0) return;
-
-  // Collision impulse
-  const impulse = (2 * dvn) / (obj1.mass + obj2.mass);
-
-  // Update velocities with some energy loss for more realistic bouncing
-  const restitution = 0.8;
-  obj1.vel.x += impulse * obj2.mass * nx * restitution;
-  obj1.vel.y += impulse * obj2.mass * ny * restitution;
-  obj2.vel.x -= impulse * obj1.mass * nx * restitution;
-  obj2.vel.y -= impulse * obj1.mass * ny * restitution;
-
-  // Separate overlapping objects
-  const overlap =
-    (obj1.size.width + obj1.size.height + obj2.size.width + obj2.size.height) /
-      4 -
-    distance;
-  if (overlap > 0) {
-    const separation = overlap / 2;
-    obj1.pos.x -= nx * separation;
-    obj1.pos.y -= ny * separation;
-    obj2.pos.x += nx * separation;
-    obj2.pos.y += ny * separation;
+  // Small separation to prevent sticking
+  const separationDistance = 2;
+  if (absDx > absDy) {
+    // Separate horizontally
+    if (dx > 0) {
+      elem1.pos.x -= separationDistance;
+      elem2.pos.x += separationDistance;
+    } else {
+      elem1.pos.x += separationDistance;
+      elem2.pos.x -= separationDistance;
+    }
+  } else {
+    // Separate vertically
+    if (dy > 0) {
+      elem1.pos.y -= separationDistance;
+      elem2.pos.y += separationDistance;
+    } else {
+      elem1.pos.y += separationDistance;
+      elem2.pos.y -= separationDistance;
+    }
   }
 }
 
@@ -152,9 +147,9 @@ function CollisionProvider({ children }: { children: React.ReactNode }) {
           const elem2 = elements[j];
 
           if (detectCollision(elem1.pos, elem1.size, elem2.pos, elem2.size)) {
-            resolveCollision(elem1, elem2);
+            handleElementCollision(elem1, elem2);
 
-            // Update positions immediately to prevent sticking
+            // Update positions and velocities immediately
             elem1.setPos({ ...elem1.pos });
             elem1.setVel({ ...elem1.vel });
             elem2.setPos({ ...elem2.pos });
@@ -190,9 +185,6 @@ function useBouncingElement(
   const elementRef = useRef<HTMLDivElement>(null);
   const collisionManager = useContext(CollisionContext);
 
-  // Calculate mass based on content length (longer text = more mass)
-  const mass = Math.max(1, content.length * 0.1);
-
   // Register with collision manager
   useEffect(() => {
     if (!collisionManager || !elementId) return;
@@ -201,7 +193,6 @@ function useBouncingElement(
       pos,
       vel,
       size,
-      mass,
       setPos,
       setVel,
     };
@@ -211,7 +202,7 @@ function useBouncingElement(
     return () => {
       collisionManager.unregisterElement(elementId);
     };
-  }, [collisionManager, elementId, pos, vel, size, mass]);
+  }, [collisionManager, elementId, pos, vel, size]);
 
   // Update viewport size (for Sinhala logo only)
   useEffect(() => {
@@ -308,7 +299,7 @@ function useBouncingElement(
         let nextX = x + vx * (isMobile ? 2 : 1);
         let nextY = y + vy * (isMobile ? 2 : 1);
 
-        // Bounce off viewport edges
+        // Bounce off viewport edges - same logic as element collisions
         if (nextX + size.width >= left + width) {
           vx = -Math.abs(vx);
           nextX = left + width - size.width;
@@ -324,7 +315,7 @@ function useBouncingElement(
           nextY = top;
         }
 
-        // Forbidden area bounce
+        // Forbidden area bounce - same simple logic
         if (forbiddenRect) {
           const fLeft = forbiddenRect.left;
           const fRight = forbiddenRect.left + forbiddenRect.width;
