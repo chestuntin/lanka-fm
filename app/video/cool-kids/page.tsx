@@ -45,7 +45,7 @@ const sampleMusicData = [
     genre: "Pop",
     year: 1987,
     views: "1.4B",
-    thumbnail: `https://img.youtube.com/vi/dQw4w9WgXcQ/maxresdefault.jpg`,
+    thumbnail: `https://img.youtube.com/vi/dQw4w9WgXcQ/hqdefault.jpg`,
     featured: true,
   },
   {
@@ -56,7 +56,7 @@ const sampleMusicData = [
     genre: "K-Pop",
     year: 2012,
     views: "4.8B",
-    thumbnail: `https://img.youtube.com/vi/9bZkp7q19f0/maxresdefault.jpg`,
+    thumbnail: `https://img.youtube.com/vi/9bZkp7q19f0/hqdefault.jpg`,
     featured: false,
   },
   {
@@ -67,7 +67,7 @@ const sampleMusicData = [
     genre: "Rock",
     year: 1999,
     views: "500M",
-    thumbnail: `https://img.youtube.com/vi/L_jWHffIx5E/maxresdefault.jpg`,
+    thumbnail: `https://img.youtube.com/vi/L_jWHffIx5E/hqdefault.jpg`,
     featured: false,
   },
   {
@@ -78,7 +78,7 @@ const sampleMusicData = [
     genre: "R&B",
     year: 2019,
     views: "3.2B",
-    thumbnail: `https://img.youtube.com/vi/hT_nvWreIhg/maxresdefault.jpg`,
+    thumbnail: `https://img.youtube.com/vi/hT_nvWreIhg/hqdefault.jpg`,
     featured: true,
   },
   {
@@ -89,7 +89,7 @@ const sampleMusicData = [
     genre: "Rock",
     year: 1975,
     views: "1.8B",
-    thumbnail: `https://img.youtube.com/vi/fJ9rUzIMcZQ/maxresdefault.jpg`,
+    thumbnail: `https://img.youtube.com/vi/fJ9rUzIMcZQ/hqdefault.jpg`,
     featured: true,
   },
   {
@@ -100,7 +100,7 @@ const sampleMusicData = [
     genre: "Pop",
     year: 2017,
     views: "5.7B",
-    thumbnail: `https://img.youtube.com/vi/JGwWNGJdvx8/maxresdefault.jpg`,
+    thumbnail: `https://img.youtube.com/vi/JGwWNGJdvx8/hqdefault.jpg`,
     featured: false,
   },
   {
@@ -111,7 +111,7 @@ const sampleMusicData = [
     genre: "Latin",
     year: 2017,
     views: "8.1B",
-    thumbnail: `https://img.youtube.com/vi/kJQP7kiw5Fk/maxresdefault.jpg`,
+    thumbnail: `https://img.youtube.com/vi/kJQP7kiw5Fk/hqdefault.jpg`,
     featured: false,
   },
   {
@@ -122,7 +122,7 @@ const sampleMusicData = [
     genre: "Pop",
     year: 2015,
     views: "3.2B",
-    thumbnail: `https://img.youtube.com/vi/YQHsXMglC9A/maxresdefault.jpg`,
+    thumbnail: `https://img.youtube.com/vi/YQHsXMglC9A/hqdefault.jpg`,
     featured: false,
   },
   {
@@ -133,7 +133,7 @@ const sampleMusicData = [
     genre: "Pop",
     year: 2014,
     views: "3.7B",
-    thumbnail: `https://img.youtube.com/vi/09R8_2nJtjg/maxresdefault.jpg`,
+    thumbnail: `https://img.youtube.com/vi/09R8_2nJtjg/hqdefault.jpg`,
     featured: false,
   },
   {
@@ -144,7 +144,7 @@ const sampleMusicData = [
     genre: "Hip Hop",
     year: 2015,
     views: "5.9B",
-    thumbnail: `https://img.youtube.com/vi/RgKAFK5djSk/maxresdefault.jpg`,
+    thumbnail: `https://img.youtube.com/vi/RgKAFK5djSk/hqdefault.jpg`,
     featured: true,
   },
   {
@@ -155,7 +155,7 @@ const sampleMusicData = [
     genre: "Pop",
     year: 2013,
     views: "3.7B",
-    thumbnail: `https://img.youtube.com/vi/CevxZvSJLk8/maxresdefault.jpg`,
+    thumbnail: `https://img.youtube.com/vi/CevxZvSJLk8/hqdefault.jpg`,
     featured: false,
   },
   {
@@ -166,7 +166,7 @@ const sampleMusicData = [
     genre: "Alternative",
     year: 2017,
     views: "2.3B",
-    thumbnail: `https://img.youtube.com/vi/nfs8NYg7yQM/maxresdefault.jpg`,
+    thumbnail: `https://img.youtube.com/vi/nfs8NYg7yQM/hqdefault.jpg`,
     featured: false,
   },
 ];
@@ -522,12 +522,17 @@ export default function YouTubeMusicLibrary() {
               />
             </div>
 
-            <Select value={selectedGenre} onValueChange={setSelectedGenre}>
+            <Select
+              value={selectedGenre || "all"}
+              onValueChange={(value) =>
+                setSelectedGenre(value === "all" ? "" : value)
+              }
+            >
               <SelectTrigger className="w-32">
                 <SelectValue placeholder="Genre" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">All</SelectItem>
+                <SelectItem value="all">All</SelectItem>
                 {genres.map((genre) => (
                   <SelectItem key={genre} value={genre}>
                     {genre}
