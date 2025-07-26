@@ -84,7 +84,7 @@ function recordCollision(id1: string, id2: string) {
   collisionCooldowns.set(pairKey, performance.now());
 }
 
-// Physics-based elastic collision response
+// Simplified collision handling that matches viewport bounce behavior
 function handleElementCollision(
   elem1: {
     pos: { x: number; y: number };
@@ -109,60 +109,42 @@ function handleElementCollision(
     y: elem2.pos.y + elem2.size.height / 2,
   };
 
-  // Calculate collision normal (direction from elem1 to elem2)
-  let normalX = center2.x - center1.x;
-  let normalY = center2.y - center1.y;
-  const distance = Math.sqrt(normalX * normalX + normalY * normalY);
+  // Calculate collision direction
+  const dx = center2.x - center1.x;
+  const dy = center2.y - center1.y;
+  const absDx = Math.abs(dx);
+  const absDy = Math.abs(dy);
 
-  // Normalize normal vector
-  normalX /= distance;
-  normalY /= distance;
+  // Store original velocities
+  const oldVel1x = elem1.vel.x;
+  const oldVel1y = elem1.vel.y;
+  const oldVel2x = elem2.vel.x;
+  const oldVel2y = elem2.vel.y;
 
-  // Calculate relative velocity
-  const relVelX = elem1.vel.x - elem2.vel.x;
-  const relVelY = elem1.vel.y - elem2.vel.y;
+  if (absDx > absDy) {
+    // Horizontal collision - swap x velocities
+    elem1.vel.x = oldVel2x;
+    elem2.vel.x = oldVel1x;
 
-  // Velocity along the normal
-  const velAlongNormal = relVelX * normalX + relVelY * normalY;
+    // Separate horizontally
+    const separationDistance = 3;
+    if (dx > 0) {
+      elem1.pos.x = elem2.pos.x - elem1.size.width - separationDistance;
+    } else {
+      elem1.pos.x = elem2.pos.x + elem2.size.width + separationDistance;
+    }
+  } else {
+    // Vertical collision - swap y velocities
+    elem1.vel.y = oldVel2y;
+    elem2.vel.y = oldVel1y;
 
-  // Don't collide if velocities are separating
-  if (velAlongNormal > 0) return;
-
-  // Calculate impulse scalar (assuming equal mass = 1)
-  const restitution = 0.9; // "bounciness" factor
-  const j = -(1 + restitution) * velAlongNormal;
-
-  // Apply impulse
-  const impulseX = j * normalX;
-  const impulseY = j * normalY;
-
-  // Update velocities (conservation of momentum)
-  elem1.vel.x -= impulseX;
-  elem1.vel.y -= impulseY;
-  elem2.vel.x += impulseX;
-  elem2.vel.y += impulseY;
-
-  // Calculate penetration depth
-  const penetration =
-    elem1.size.width / 2 +
-    elem2.size.width / 2 -
-    Math.abs(center1.x - center2.x);
-  const penetrationY =
-    elem1.size.height / 2 +
-    elem2.size.height / 2 -
-    Math.abs(center1.y - center2.y);
-  const minPenetration = Math.min(penetration, penetrationY);
-
-  // Separate positions along collision normal
-  if (minPenetration > 0) {
-    const separationFactor = 0.5;
-    const correctionX = normalX * minPenetration * separationFactor;
-    const correctionY = normalY * minPenetration * separationFactor;
-
-    elem1.pos.x -= correctionX;
-    elem1.pos.y -= correctionY;
-    elem2.pos.x += correctionX;
-    elem2.pos.y += correctionY;
+    // Separate vertically
+    const separationDistance = 3;
+    if (dy > 0) {
+      elem1.pos.y = elem2.pos.y - elem1.size.height - separationDistance;
+    } else {
+      elem1.pos.y = elem2.pos.y + elem2.size.height + separationDistance;
+    }
   }
 
   recordCollision(elem1Id, elem2Id);
