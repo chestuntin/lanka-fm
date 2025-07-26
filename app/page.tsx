@@ -85,6 +85,9 @@ function recordCollision(id1: string, id2: string) {
 }
 
 // Simplified collision handling that matches viewport bounce behavior
+// ... existing code ...
+
+// Improved collision handling that accounts for text size
 function handleElementCollision(
   elem1: {
     pos: { x: number; y: number };
@@ -99,19 +102,11 @@ function handleElementCollision(
   elem1Id: string,
   elem2Id: string
 ) {
-  // Calculate centers
-  const center1 = {
-    x: elem1.pos.x + elem1.size.width / 2,
-    y: elem1.pos.y + elem1.size.height / 2,
-  };
-  const center2 = {
-    x: elem2.pos.x + elem2.size.width / 2,
-    y: elem2.pos.y + elem2.size.height / 2,
-  };
-
   // Calculate collision direction
-  const dx = center2.x - center1.x;
-  const dy = center2.y - center1.y;
+  const dx =
+    elem2.pos.x + elem2.size.width / 2 - (elem1.pos.x + elem1.size.width / 2);
+  const dy =
+    elem2.pos.y + elem2.size.height / 2 - (elem1.pos.y + elem1.size.height / 2);
   const absDx = Math.abs(dx);
   const absDy = Math.abs(dy);
 
@@ -121,13 +116,23 @@ function handleElementCollision(
   const oldVel2x = elem2.vel.x;
   const oldVel2y = elem2.vel.y;
 
+  // Calculate overlap to prevent jitter
+  let overlapX = 0;
+  let overlapY = 0;
+
   if (absDx > absDy) {
     // Horizontal collision - swap x velocities
     elem1.vel.x = oldVel2x;
     elem2.vel.x = oldVel1x;
 
-    // Separate horizontally
-    const separationDistance = 3;
+    // Calculate horizontal overlap
+    overlapX = Math.min(
+      elem1.pos.x + elem1.size.width - elem2.pos.x,
+      elem2.pos.x + elem2.size.width - elem1.pos.x
+    );
+
+    // Separate horizontally based on overlap
+    const separationDistance = Math.max(3, overlapX * 0.6);
     if (dx > 0) {
       elem1.pos.x = elem2.pos.x - elem1.size.width - separationDistance;
     } else {
@@ -138,8 +143,14 @@ function handleElementCollision(
     elem1.vel.y = oldVel2y;
     elem2.vel.y = oldVel1y;
 
-    // Separate vertically
-    const separationDistance = 3;
+    // Calculate vertical overlap
+    overlapY = Math.min(
+      elem1.pos.y + elem1.size.height - elem2.pos.y,
+      elem2.pos.y + elem2.size.height - elem1.pos.y
+    );
+
+    // Separate vertically based on overlap
+    const separationDistance = Math.max(3, overlapY * 0.6);
     if (dy > 0) {
       elem1.pos.y = elem2.pos.y - elem1.size.height - separationDistance;
     } else {
