@@ -161,10 +161,10 @@ function useBouncingElement(
           nextY = top;
         }
 
-        // Forbidden area bounce
+        // Extended forbidden area bounce (includes left/right of input box)
         if (forbiddenRect) {
-          const fLeft = forbiddenRect.left;
-          const fRight = forbiddenRect.left + forbiddenRect.width;
+          const fLeft = 0; // Extend forbidden area to full width at input level
+          const fRight = width; // Full viewport width
           const fTop = forbiddenRect.top;
           const fBottom = forbiddenRect.top + forbiddenRect.height;
           const overlaps =
@@ -173,18 +173,10 @@ function useBouncingElement(
             nextY + size.height > fTop &&
             nextY < fBottom;
           if (overlaps) {
-            const distLeft = Math.abs(nextX + size.width - fLeft);
-            const distRight = Math.abs(nextX - fRight);
             const distTop = Math.abs(nextY + size.height - fTop);
             const distBottom = Math.abs(nextY - fBottom);
-            const minDist = Math.min(distLeft, distRight, distTop, distBottom);
-            if (minDist === distLeft) {
-              nextX = fLeft - size.width;
-              vx = -Math.abs(vx);
-            } else if (minDist === distRight) {
-              nextX = fRight;
-              vx = Math.abs(vx);
-            } else if (minDist === distTop) {
+            const minDist = Math.min(distTop, distBottom);
+            if (minDist === distTop) {
               nextY = fTop - size.height;
               vy = -Math.abs(vy);
             } else if (minDist === distBottom) {
@@ -223,7 +215,7 @@ function useBouncingElement(
   return { pos, vel, elementRef, size, respawn };
 }
 
-// Random spawn outside input
+// Random spawn outside input - only above and below (not left/right)
 function getRandomPositionOutsideInput(
   size: { width: number; height: number },
   inputBounds?: { left: number; top: number; width: number; height: number }
@@ -238,6 +230,7 @@ function getRandomPositionOutsideInput(
     };
   }
   const regions = [
+    // Only allow spawning above and below input box
     {
       xMin: 0,
       xMax: vw - size.width,
@@ -250,18 +243,7 @@ function getRandomPositionOutsideInput(
       yMin: inputBounds.top + inputBounds.height,
       yMax: vh - size.height,
     },
-    {
-      xMin: 0,
-      xMax: inputBounds.left - size.width,
-      yMin: inputBounds.top,
-      yMax: inputBounds.top + inputBounds.height - size.height,
-    },
-    {
-      xMin: inputBounds.left + inputBounds.width,
-      xMax: vw - size.width,
-      yMin: inputBounds.top,
-      yMax: inputBounds.top + inputBounds.height - size.height,
-    },
+    // Removed left and right regions - they are now forbidden
   ].filter((r) => r.xMax > r.xMin && r.yMax > r.yMin);
   if (!regions.length)
     return {
@@ -337,6 +319,8 @@ function BouncingMessage({
         transition: "none",
         fontFamily: "Helvetica Neue, Helvetica, Arial, sans-serif",
         pointerEvents: "none",
+        border: "1px solid red", // Debug border to show element boundaries
+        boxSizing: "border-box",
       }}
     >
       {text}
@@ -618,6 +602,8 @@ export default function HomePage() {
             transition: "none",
             fontFamily: "Noto Sans Sinhala",
             pointerEvents: "none",
+            border: "1px solid red", // Debug border to show element boundaries
+            boxSizing: "border-box",
           }}
           ref={sinhalaLogo.elementRef}
         >
