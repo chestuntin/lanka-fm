@@ -14,19 +14,19 @@ import Head from "next/head";
 import { Snowflake, Eye, EyeOff } from "lucide-react";
 import ChatInput from "@/components/ChatInput";
 
+// Type for a bouncing element
+type BouncingElement = {
+  pos: { x: number; y: number };
+  vel: { x: number; y: number };
+  size: { width: number; height: number };
+  setPos: (pos: { x: number; y: number }) => void;
+  setVel: (vel: { x: number; y: number }) => void;
+};
+
 // Global collision manager context
 interface CollisionManager {
-  elements: Map<
-    string,
-    {
-      pos: { x: number; y: number };
-      vel: { x: number; y: number };
-      size: { width: number; height: number };
-      setPos: (pos: { x: number; y: number }) => void;
-      setVel: (vel: { x: number; y: number }) => void;
-    }
-  >;
-  registerElement: (id: string, element: any) => void;
+  elements: Map<string, BouncingElement>;
+  registerElement: (id: string, element: BouncingElement) => void;
   unregisterElement: (id: string) => void;
   checkCollisions: () => void;
 }
@@ -84,90 +84,76 @@ function recordCollision(id1: string, id2: string) {
   collisionCooldowns.set(pairKey, performance.now());
 }
 
-// Simplified collision handling that matches viewport bounce behavior
-// ... existing code ...
-
-// Improved collision handling that accounts for text size
+// Improved collision handling for smoother bounces
 function handleElementCollision(
-  elem1: {
-    pos: { x: number; y: number };
-    vel: { x: number; y: number };
-    size: { width: number; height: number };
-  },
-  elem2: {
-    pos: { x: number; y: number };
-    vel: { x: number; y: number };
-    size: { width: number; height: number };
-  },
+  elem1: BouncingElement,
+  elem2: BouncingElement,
   elem1Id: string,
   elem2Id: string
 ) {
-  // Calculate collision direction
-  const dx =
-    elem2.pos.x + elem2.size.width / 2 - (elem1.pos.x + elem1.size.width / 2);
-  const dy =
-    elem2.pos.y + elem2.size.height / 2 - (elem1.pos.y + elem1.size.height / 2);
-  const absDx = Math.abs(dx);
-  const absDy = Math.abs(dy);
+  const center1 = {
+    x: elem1.pos.x + elem1.size.width / 2,
+    y: elem1.pos.y + elem1.size.height / 2,
+  };
+  const center2 = {
+    x: elem2.pos.x + elem2.size.width / 2,
+    y: elem2.pos.y + elem2.size.height / 2,
+  };
 
-  // Store original velocities
-  const oldVel1x = elem1.vel.x;
-  const oldVel1y = elem1.vel.y;
-  const oldVel2x = elem2.vel.x;
-  const oldVel2y = elem2.vel.y;
+  const dx = center2.x - center1.x;
+  const dy = center2.y - center1.y;
 
-  // Calculate overlap to prevent jitter
-  let overlapX = 0;
-  let overlapY = 0;
+  const combinedHalfWidths = (elem1.size.width + elem2.size.width) / 2;
+  const combinedHalfHeights = (elem1.size.height + elem2.size.height) / 2;
 
-  if (absDx > absDy) {
-    // Horizontal collision - swap x velocities
-    elem1.vel.x = oldVel2x;
-    elem2.vel.x = oldVel1x;
+  const overlapX = combinedHalfWidths - Math.abs(dx);
+  const overlapY = combinedHalfHeights - Math.abs(dy);
 
-    // Calculate horizontal overlap
-    overlapX = Math.min(
-      elem1.pos.x + elem1.size.width - elem2.pos.x,
-      elem2.pos.x + elem2.size.width - elem1.pos.x
-    );
+  const newVel1 = { ...elem1.vel };
+  const newVel2 = { ...elem2.vel };
+  const newPos1 = { ...elem1.pos };
+  const newPos2 = { ...elem2.pos };
 
-    // Separate horizontally based on overlap
-    const separationDistance = Math.max(3, overlapX * 0.6);
-    if (dx > 0) {
-      elem1.pos.x = elem2.pos.x - elem1.size.width - separationDistance;
-    } else {
-      elem1.pos.x = elem2.pos.x + elem2.size.width + separationDistance;
-    }
+  // Resolve overlap by pushing away on the axis of least penetration
+  if (overlapX < overlapY) {
+    // Horizontal collision
+    const sign = Math.sign(dx);
+    const separation = overlapX / 2 + 0.5; // Separate by half overlap + a little extra
+
+    newPos1.x -= separation * sign;
+    newPos2.x += separation * sign;
+
+    // Elastic collision for x-velocity
+    newVel1.x = elem2.vel.x;
+    newVel2.x = elem1.vel.x;
   } else {
-    // Vertical collision - swap y velocities
-    elem1.vel.y = oldVel2y;
-    elem2.vel.y = oldVel1y;
+    // Vertical collision
+    const sign = Math.sign(dy);
+    const separation = overlapY / 2 + 0.5; // Separate by half overlap + a little extra
 
-    // Calculate vertical overlap
-    overlapY = Math.min(
-      elem1.pos.y + elem1.size.height - elem2.pos.y,
-      elem2.pos.y + elem2.size.height - elem1.pos.y
-    );
+    newPos1.y -= separation * sign;
+    newPos2.y += separation * sign;
 
-    // Separate vertically based on overlap
-    const separationDistance = Math.max(3, overlapY * 0.6);
-    if (dy > 0) {
-      elem1.pos.y = elem2.pos.y - elem1.size.height - separationDistance;
-    } else {
-      elem1.pos.y = elem2.pos.y + elem2.size.height + separationDistance;
-    }
+    // Elastic collision for y-velocity
+    newVel1.y = elem2.vel.y;
+    newVel2.y = elem1.vel.y;
   }
+
+  elem1.setPos(newPos1);
+  elem2.setPos(newPos2);
+  elem1.setVel(newVel1);
+  elem2.setVel(newVel2);
 
   recordCollision(elem1Id, elem2Id);
 }
 
 // Collision Manager Provider
 function CollisionProvider({ children }: { children: React.ReactNode }) {
-  const elementsRef = useRef<Map<string, any>>(new Map());
+  const elementsRef = useRef<Map<string, BouncingElement>>(new Map());
 
   const manager: CollisionManager = {
     elements: elementsRef.current,
-    registerElement: (id: string, element: any) => {
+    registerElement: (id: string, element: BouncingElement) => {
       elementsRef.current.set(id, element);
     },
     unregisterElement: (id: string) => {
@@ -195,12 +181,6 @@ function CollisionProvider({ children }: { children: React.ReactNode }) {
 
           if (isColliding) {
             handleElementCollision(elem1, elem2, id1, id2);
-
-            // Update positions and velocities immediately
-            elem1.setPos({ ...elem1.pos });
-            elem1.setVel({ ...elem1.vel });
-            elem2.setPos({ ...elem2.pos });
-            elem2.setVel({ ...elem2.vel });
           }
         }
       }
