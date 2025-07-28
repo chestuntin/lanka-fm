@@ -7,8 +7,6 @@ import {
   useState,
   useLayoutEffect,
   useCallback,
-  createContext,
-  useContext,
 } from "react";
 import Head from "next/head";
 import { Snowflake, Eye, EyeOff } from "lucide-react";
@@ -22,16 +20,6 @@ type BouncingElement = {
   setPos: (pos: { x: number; y: number }) => void;
   setVel: (vel: { x: number; y: number }) => void;
 };
-
-// Global collision manager context
-interface CollisionManager {
-  elements: Map<string, BouncingElement>;
-  registerElement: (id: string, element: BouncingElement) => void;
-  unregisterElement: (id: string) => void;
-  checkCollisions: () => void;
-}
-
-const CollisionContext = createContext<CollisionManager | null>(null);
 
 // Utility: detect mobile (stateful)
 function useIsMobile() {
@@ -47,211 +35,7 @@ function useIsMobile() {
   return isMobile;
 }
 
-// Improved collision detection with better separation
-function detectCollision(
-  pos1: { x: number; y: number },
-  size1: { width: number; height: number },
-  pos2: { x: number; y: number },
-  size2: { width: number; height: number }
-): boolean {
-  return (
-    pos1.x < pos2.x + size2.width &&
-    pos1.x + size1.width > pos2.x &&
-    pos1.y < pos2.y + size2.height &&
-    pos1.y + size1.height > pos2.y
-  );
-}
-
-// Enhanced collision tracking with shorter cooldown
-const collisionCooldowns = new Map<string, number>();
-
-// Reduced cooldown for more responsive collisions
-function canCollide(id1: string, id2: string): boolean {
-  const pairKey = [id1, id2].sort().join("-");
-  const now = performance.now();
-  const lastCollision = collisionCooldowns.get(pairKey) || 0;
-
-  // Reduced cooldown to 50ms for more responsive collisions
-  if (now - lastCollision < 50) {
-    return false;
-  }
-
-  return true;
-}
-
-function recordCollision(id1: string, id2: string) {
-  const pairKey = [id1, id2].sort().join("-");
-  collisionCooldowns.set(pairKey, performance.now());
-}
-
-// Completely rewritten collision handling for smooth physics
-function handleElementCollision(
-  elem1: BouncingElement,
-  elem2: BouncingElement,
-  elem1Id: string,
-  elem2Id: string
-) {
-  // Calculate centers
-  const center1 = {
-    x: elem1.pos.x + elem1.size.width / 2,
-    y: elem1.pos.y + elem1.size.height / 2,
-  };
-  const center2 = {
-    x: elem2.pos.x + elem2.size.width / 2,
-    y: elem2.pos.y + elem2.size.height / 2,
-  };
-
-  // Calculate distance and overlap
-  const dx = center2.x - center1.x;
-  const dy = center2.y - center1.y;
-  const distance = Math.sqrt(dx * dx + dy * dy);
-  
-  // Prevent division by zero
-  if (distance === 0) {
-    // If elements are exactly on top of each other, separate them randomly
-    const angle = Math.random() * Math.PI * 2;
-    const separationDistance = Math.max(elem1.size.width, elem1.size.height) / 2 + 2;
-    
-    elem1.setPos({
-      x: elem1.pos.x - Math.cos(angle) * separationDistance,
-      y: elem1.pos.y - Math.sin(angle) * separationDistance
-    });
-    elem2.setPos({
-      x: elem2.pos.x + Math.cos(angle) * separationDistance,
-      y: elem2.pos.y + Math.sin(angle) * separationDistance
-    });
-    
-    // Set opposite velocities
-    const speed = 1.0;
-    elem1.setVel({
-      x: -Math.cos(angle) * speed,
-      y: -Math.sin(angle) * speed
-    });
-    elem2.setVel({
-      x: Math.cos(angle) * speed,
-      y: Math.sin(angle) * speed
-    });
-    
-    recordCollision(elem1Id, elem2Id);
-    return;
-  }
-
-  // Normalize collision vector
-  const nx = dx / distance;
-  const ny = dy / distance;
-
-  // Calculate minimum separation distance
-  const combinedHalfWidths = (elem1.size.width + elem2.size.width) / 2;
-  const combinedHalfHeights = (elem1.size.height + elem2.size.height) / 2;
-  
-  // Use the smaller dimension for more accurate collision
-  const minSeparation = Math.min(combinedHalfWidths, combinedHalfHeights);
-  const overlap = minSeparation - distance;
-  
-  if (overlap > 0) {
-    // Separate the elements with extra padding to prevent sticking
-    const separationDistance = overlap / 2 + 2; // Extra 2px padding
-    
-    const newPos1 = {
-      x: elem1.pos.x - nx * separationDistance,
-      y: elem1.pos.y - ny * separationDistance
-    };
-    const newPos2 = {
-      x: elem2.pos.x + nx * separationDistance,
-      y: elem2.pos.y + ny * separationDistance
-    };
-    
-    elem1.setPos(newPos1);
-    elem2.setPos(newPos2);
-  }
-
-  // Calculate relative velocity
-  const relativeVelX = elem2.vel.x - elem1.vel.x;
-  const relativeVelY = elem2.vel.y - elem1.vel.y;
-  
-  // Calculate relative velocity along collision normal
-  const relativeSpeed = relativeVelX * nx + relativeVelY * ny;
-  
-  // Don't resolve if velocities are separating
-  if (relativeSpeed > 0) {
-    recordCollision(elem1Id, elem2Id);
-    return;
-  }
-  
-  // Calculate restitution (bounciness) - slightly less than 1 for more realistic physics
-  const restitution = 0.95;
-  
-  // Calculate impulse scalar
-  const impulse = -(1 + restitution) * relativeSpeed;
-  
-  // Apply impulse to velocities (assuming equal mass)
-  const impulseX = impulse * nx;
-  const impulseY = impulse * ny;
-  
-  // Update velocities with some damping to prevent infinite energy
-  const damping = 0.98;
-  
-  elem1.setVel({
-    x: (elem1.vel.x - impulseX) * damping,
-    y: (elem1.vel.y - impulseY) * damping
-  });
-  
-  elem2.setVel({
-    x: (elem2.vel.x + impulseX) * damping,
-    y: (elem2.vel.y + impulseY) * damping
-  });
-  
-  recordCollision(elem1Id, elem2Id);
-}
-
-// Collision Manager Provider
-function CollisionProvider({ children }: { children: React.ReactNode }) {
-  const elementsRef = useRef<Map<string, BouncingElement>>(new Map());
-
-  const manager: CollisionManager = {
-    elements: elementsRef.current,
-    registerElement: (id: string, element: BouncingElement) => {
-      elementsRef.current.set(id, element);
-    },
-    unregisterElement: (id: string) => {
-      elementsRef.current.delete(id);
-    },
-    checkCollisions: () => {
-      const elements = Array.from(elementsRef.current.entries());
-
-      for (let i = 0; i < elements.length; i++) {
-        for (let j = i + 1; j < elements.length; j++) {
-          const [id1, elem1] = elements[i];
-          const [id2, elem2] = elements[j];
-
-          // Check cooldown first
-          if (!canCollide(id1, id2)) {
-            continue;
-          }
-
-          const isColliding = detectCollision(
-            elem1.pos,
-            elem1.size,
-            elem2.pos,
-            elem2.size
-          );
-
-          if (isColliding) {
-            handleElementCollision(elem1, elem2, id1, id2);
-          }
-        }
-      }
-    },
-  };
-
-  return (
-    <CollisionContext.Provider value={manager}>
-      {children}
-    </CollisionContext.Provider>
-  );
-}
-
-// Custom hook for bouncing elements with collision support
+// Custom hook for bouncing elements
 function useBouncingElement(
   content: string,
   isFrozen: boolean,
@@ -267,26 +51,6 @@ function useBouncingElement(
   const [viewport, setViewport] = useState({ width: 0, height: 0 });
   const [size, setSize] = useState({ width: 48, height: 48 });
   const elementRef = useRef<HTMLDivElement>(null);
-  const collisionManager = useContext(CollisionContext);
-
-  // Register with collision manager
-  useEffect(() => {
-    if (!collisionManager || !elementId) return;
-
-    const element = {
-      pos,
-      vel,
-      size,
-      setPos,
-      setVel,
-    };
-
-    collisionManager.registerElement(elementId, element);
-
-    return () => {
-      collisionManager.unregisterElement(elementId);
-    };
-  }, [collisionManager, elementId, pos, vel, size]);
 
   // Update viewport size (for Sinhala logo only)
   useEffect(() => {
@@ -361,11 +125,6 @@ function useBouncingElement(
     let animationFrame: number;
 
     function animate() {
-      // Check for collisions first
-      if (collisionManager) {
-        collisionManager.checkCollisions();
-      }
-
       setPos((prev) => {
         let { x, y } = prev;
         let { x: vx, y: vy } = vel;
@@ -458,7 +217,6 @@ function useBouncingElement(
     size,
     boundaries,
     forbiddenRect,
-    collisionManager,
     elementId,
   ]);
 
@@ -725,7 +483,7 @@ export default function HomePage() {
 
   // Sinhala logo bouncing
   const sinhalaLogo = useBouncingElement(
-    "කල්චර්®",
+    "කل්චර්®",
     isFrozen,
     isMobile,
     9999,
@@ -819,7 +577,7 @@ export default function HomePage() {
   }, [isMobile, messages.length]);
 
   return (
-    <CollisionProvider>
+    <>
       <Head>
         <link
           href="https://fonts.googleapis.com/css2?family=Noto+Sans+Sinhala:wght@700&display=swap"
@@ -917,6 +675,6 @@ export default function HomePage() {
           </div>
         </div>
       </div>
-    </CollisionProvider>
+    </>
   );
 }
