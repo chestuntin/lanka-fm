@@ -161,26 +161,49 @@ function useBouncingElement(
           nextY = top;
         }
 
-        // Extended forbidden area bounce (includes left/right of input box)
+        // FIXED: Only bounce off the actual input box bounds, not full width
         if (forbiddenRect) {
-          const fLeft = 0; // Extend forbidden area to full width at input level
-          const fRight = width; // Full viewport width
-          const fTop = forbiddenRect.top;
-          const fBottom = forbiddenRect.top + forbiddenRect.height;
-          const overlaps =
-            nextX + size.width > fLeft &&
-            nextX < fRight &&
-            nextY + size.height > fTop &&
-            nextY < fBottom;
-          if (overlaps) {
-            const distTop = Math.abs(nextY + size.height - fTop);
-            const distBottom = Math.abs(nextY - fBottom);
-            const minDist = Math.min(distTop, distBottom);
-            if (minDist === distTop) {
-              nextY = fTop - size.height;
+          // Use actual input box bounds for collision
+          const inputLeft = forbiddenRect.left;
+          const inputRight = forbiddenRect.left + forbiddenRect.width;
+          const inputTop = forbiddenRect.top;
+          const inputBottom = forbiddenRect.top + forbiddenRect.height;
+
+          // Check if logo overlaps with input box
+          const overlapsX =
+            nextX + size.width > inputLeft && nextX < inputRight;
+          const overlapsY =
+            nextY + size.height > inputTop && nextY < inputBottom;
+
+          if (overlapsX && overlapsY) {
+            // Calculate distances to each edge to determine best bounce direction
+            const distToLeft = Math.abs(nextX + size.width - inputLeft);
+            const distToRight = Math.abs(nextX - inputRight);
+            const distToTop = Math.abs(nextY + size.height - inputTop);
+            const distToBottom = Math.abs(nextY - inputBottom);
+
+            const minDist = Math.min(
+              distToLeft,
+              distToRight,
+              distToTop,
+              distToBottom
+            );
+
+            if (minDist === distToLeft) {
+              // Bounce off left edge of input
+              nextX = inputLeft - size.width;
+              vx = -Math.abs(vx);
+            } else if (minDist === distToRight) {
+              // Bounce off right edge of input
+              nextX = inputRight;
+              vx = Math.abs(vx);
+            } else if (minDist === distToTop) {
+              // Bounce off top edge of input
+              nextY = inputTop - size.height;
               vy = -Math.abs(vy);
-            } else if (minDist === distBottom) {
-              nextY = fBottom;
+            } else if (minDist === distToBottom) {
+              // Bounce off bottom edge of input
+              nextY = inputBottom;
               vy = Math.abs(vy);
             }
           }
