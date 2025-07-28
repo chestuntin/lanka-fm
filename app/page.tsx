@@ -319,7 +319,6 @@ function BouncingMessage({
         transition: "none",
         fontFamily: "Helvetica Neue, Helvetica, Arial, sans-serif",
         pointerEvents: "none",
-        border: "1px solid red", // Debug border to show element boundaries
         boxSizing: "border-box",
         padding: 0,
         margin: 0,
@@ -606,7 +605,6 @@ export default function HomePage() {
             transition: "none",
             fontFamily: "Noto Sans Sinhala",
             pointerEvents: "none",
-            border: "1px solid red", // Debug border to show element boundaries
             boxSizing: "border-box",
             padding: 0,
             margin: 0,
