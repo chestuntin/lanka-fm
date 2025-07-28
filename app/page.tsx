@@ -320,7 +320,7 @@ function BouncingMessage({
         fontFamily: "Helvetica Neue, Helvetica, Arial, sans-serif",
         pointerEvents: "none",
         boxSizing: "border-box",
-        padding: 0,
+        paddingTop: "0.3em", // small vertical buffer for ®
         margin: 0,
         lineHeight: 1,
         display: "inline-block",
@@ -606,7 +606,7 @@ export default function HomePage() {
             fontFamily: "Noto Sans Sinhala",
             pointerEvents: "none",
             boxSizing: "border-box",
-            padding: 0,
+            paddingTop: "0.3em", // small vertical buffer for ®
             margin: 0,
             lineHeight: 1,
             display: "inline-block",
