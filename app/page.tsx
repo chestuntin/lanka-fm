@@ -47,7 +47,7 @@ function useIsMobile() {
   return isMobile;
 }
 
-// Simple collision detection
+// Improved collision detection with better separation
 function detectCollision(
   pos1: { x: number; y: number },
   size1: { width: number; height: number },
@@ -62,17 +62,17 @@ function detectCollision(
   );
 }
 
-// Simplified collision tracking
+// Enhanced collision tracking with shorter cooldown
 const collisionCooldowns = new Map<string, number>();
 
-// Simple collision detection with cooldown
+// Reduced cooldown for more responsive collisions
 function canCollide(id1: string, id2: string): boolean {
   const pairKey = [id1, id2].sort().join("-");
   const now = performance.now();
   const lastCollision = collisionCooldowns.get(pairKey) || 0;
 
-  // Prevent collision if less than 100ms since last collision
-  if (now - lastCollision < 100) {
+  // Reduced cooldown to 50ms for more responsive collisions
+  if (now - lastCollision < 50) {
     return false;
   }
 
@@ -84,13 +84,14 @@ function recordCollision(id1: string, id2: string) {
   collisionCooldowns.set(pairKey, performance.now());
 }
 
-// Improved collision handling for smoother bounces
+// Completely rewritten collision handling for smooth physics
 function handleElementCollision(
   elem1: BouncingElement,
   elem2: BouncingElement,
   elem1Id: string,
   elem2Id: string
 ) {
+  // Calculate centers
   const center1 = {
     x: elem1.pos.x + elem1.size.width / 2,
     y: elem1.pos.y + elem1.size.height / 2,
@@ -100,50 +101,106 @@ function handleElementCollision(
     y: elem2.pos.y + elem2.size.height / 2,
   };
 
+  // Calculate distance and overlap
   const dx = center2.x - center1.x;
   const dy = center2.y - center1.y;
-
-  const combinedHalfWidths = (elem1.size.width + elem2.size.width) / 2;
-  const combinedHalfHeights = (elem1.size.height + elem2.size.height) / 2;
-
-  const overlapX = combinedHalfWidths - Math.abs(dx);
-  const overlapY = combinedHalfHeights - Math.abs(dy);
-
-  const newVel1 = { ...elem1.vel };
-  const newVel2 = { ...elem2.vel };
-  const newPos1 = { ...elem1.pos };
-  const newPos2 = { ...elem2.pos };
-
-  // Resolve overlap by pushing away on the axis of least penetration
-  if (overlapX < overlapY) {
-    // Horizontal collision
-    const sign = Math.sign(dx);
-    const separation = overlapX / 2 + 0.5; // Separate by half overlap + a little extra
-
-    newPos1.x -= separation * sign;
-    newPos2.x += separation * sign;
-
-    // Elastic collision for x-velocity
-    newVel1.x = elem2.vel.x;
-    newVel2.x = elem1.vel.x;
-  } else {
-    // Vertical collision
-    const sign = Math.sign(dy);
-    const separation = overlapY / 2 + 0.5; // Separate by half overlap + a little extra
-
-    newPos1.y -= separation * sign;
-    newPos2.y += separation * sign;
-
-    // Elastic collision for y-velocity
-    newVel1.y = elem2.vel.y;
-    newVel2.y = elem1.vel.y;
+  const distance = Math.sqrt(dx * dx + dy * dy);
+  
+  // Prevent division by zero
+  if (distance === 0) {
+    // If elements are exactly on top of each other, separate them randomly
+    const angle = Math.random() * Math.PI * 2;
+    const separationDistance = Math.max(elem1.size.width, elem1.size.height) / 2 + 2;
+    
+    elem1.setPos({
+      x: elem1.pos.x - Math.cos(angle) * separationDistance,
+      y: elem1.pos.y - Math.sin(angle) * separationDistance
+    });
+    elem2.setPos({
+      x: elem2.pos.x + Math.cos(angle) * separationDistance,
+      y: elem2.pos.y + Math.sin(angle) * separationDistance
+    });
+    
+    // Set opposite velocities
+    const speed = 1.0;
+    elem1.setVel({
+      x: -Math.cos(angle) * speed,
+      y: -Math.sin(angle) * speed
+    });
+    elem2.setVel({
+      x: Math.cos(angle) * speed,
+      y: Math.sin(angle) * speed
+    });
+    
+    recordCollision(elem1Id, elem2Id);
+    return;
   }
 
-  elem1.setPos(newPos1);
-  elem2.setPos(newPos2);
-  elem1.setVel(newVel1);
-  elem2.setVel(newVel2);
+  // Normalize collision vector
+  const nx = dx / distance;
+  const ny = dy / distance;
 
+  // Calculate minimum separation distance
+  const combinedHalfWidths = (elem1.size.width + elem2.size.width) / 2;
+  const combinedHalfHeights = (elem1.size.height + elem2.size.height) / 2;
+  
+  // Use the smaller dimension for more accurate collision
+  const minSeparation = Math.min(combinedHalfWidths, combinedHalfHeights);
+  const overlap = minSeparation - distance;
+  
+  if (overlap > 0) {
+    // Separate the elements with extra padding to prevent sticking
+    const separationDistance = overlap / 2 + 2; // Extra 2px padding
+    
+    const newPos1 = {
+      x: elem1.pos.x - nx * separationDistance,
+      y: elem1.pos.y - ny * separationDistance
+    };
+    const newPos2 = {
+      x: elem2.pos.x + nx * separationDistance,
+      y: elem2.pos.y + ny * separationDistance
+    };
+    
+    elem1.setPos(newPos1);
+    elem2.setPos(newPos2);
+  }
+
+  // Calculate relative velocity
+  const relativeVelX = elem2.vel.x - elem1.vel.x;
+  const relativeVelY = elem2.vel.y - elem1.vel.y;
+  
+  // Calculate relative velocity along collision normal
+  const relativeSpeed = relativeVelX * nx + relativeVelY * ny;
+  
+  // Don't resolve if velocities are separating
+  if (relativeSpeed > 0) {
+    recordCollision(elem1Id, elem2Id);
+    return;
+  }
+  
+  // Calculate restitution (bounciness) - slightly less than 1 for more realistic physics
+  const restitution = 0.95;
+  
+  // Calculate impulse scalar
+  const impulse = -(1 + restitution) * relativeSpeed;
+  
+  // Apply impulse to velocities (assuming equal mass)
+  const impulseX = impulse * nx;
+  const impulseY = impulse * ny;
+  
+  // Update velocities with some damping to prevent infinite energy
+  const damping = 0.98;
+  
+  elem1.setVel({
+    x: (elem1.vel.x - impulseX) * damping,
+    y: (elem1.vel.y - impulseY) * damping
+  });
+  
+  elem2.setVel({
+    x: (elem2.vel.x + impulseX) * damping,
+    y: (elem2.vel.y + impulseY) * damping
+  });
+  
   recordCollision(elem1Id, elem2Id);
 }
 
