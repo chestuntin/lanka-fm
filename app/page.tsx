@@ -321,6 +321,10 @@ function BouncingMessage({
         pointerEvents: "none",
         border: "1px solid red", // Debug border to show element boundaries
         boxSizing: "border-box",
+        padding: 0,
+        margin: 0,
+        lineHeight: 1,
+        display: "inline-block",
       }}
     >
       {text}
@@ -604,6 +608,10 @@ export default function HomePage() {
             pointerEvents: "none",
             border: "1px solid red", // Debug border to show element boundaries
             boxSizing: "border-box",
+            padding: 0,
+            margin: 0,
+            lineHeight: 1,
+            display: "inline-block",
           }}
           ref={sinhalaLogo.elementRef}
         >
