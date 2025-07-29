@@ -35,6 +35,24 @@ function useIsMobile() {
   return isMobile;
 }
 
+// Get safe viewport dimensions that won't cause scrollbars
+function getSafeViewportDimensions() {
+  if (typeof window === "undefined") return { width: 0, height: 0 };
+
+  // Use the smaller of innerWidth/innerHeight and documentElement dimensions
+  // to ensure we stay within visible bounds
+  const width = Math.min(
+    window.innerWidth,
+    document.documentElement.clientWidth || window.innerWidth
+  );
+  const height = Math.min(
+    window.innerHeight,
+    document.documentElement.clientHeight || window.innerHeight
+  );
+
+  return { width, height };
+}
+
 // Custom hook for bouncing elements
 function useBouncingElement(
   content: string,
@@ -52,13 +70,12 @@ function useBouncingElement(
   const [size, setSize] = useState({ width: 48, height: 48 });
   const elementRef = useRef<HTMLDivElement>(null);
 
-  // Update viewport size (for Sinhala logo only)
+  // Update viewport size (for Sinhala logo only) - use safe dimensions
   useEffect(() => {
     if (boundaries) return;
     function updateSize() {
-      const width = window.innerWidth;
-      const height = window.innerHeight;
-      setViewport({ width, height });
+      const safeDimensions = getSafeViewportDimensions();
+      setViewport(safeDimensions);
     }
     updateSize();
     window.addEventListener("resize", updateSize);
@@ -78,7 +95,7 @@ function useBouncingElement(
     return () => window.removeEventListener("resize", updateSize);
   }, [content]);
 
-  // Respawn logic
+  // Respawn logic - ensure spawning within safe viewport bounds
   const respawn = useCallback(() => {
     let left, top, width, height;
     if (boundaries) {
@@ -87,25 +104,50 @@ function useBouncingElement(
       width = boundaries.width;
       height = boundaries.height;
     } else {
+      // Use safe viewport dimensions to prevent scrollbars
+      const safeDimensions = getSafeViewportDimensions();
       left = 0;
       top = 0;
-      width = viewport.width;
-      height = viewport.height;
+      width = safeDimensions.width;
+      height = safeDimensions.height;
     }
+
     if (!width || !height || (forbiddenRect && !forbiddenRect.width)) return;
+
     let spawnPos;
     if (forbiddenRect) {
-      spawnPos = getRandomPositionOutsideInput(size, forbiddenRect);
+      spawnPos = getRandomPositionOutsideInput(size, forbiddenRect, {
+        width,
+        height,
+      });
     } else {
       const xMin = left;
       const xMax = left + width - size.width;
       const yMin = top;
       const yMax = top + height - size.height;
       spawnPos = {
-        x: xMin + Math.random() * Math.max(1, xMax - xMin),
-        y: yMin + Math.random() * Math.max(1, yMax - yMin),
+        x: Math.max(
+          xMin,
+          Math.min(xMin + Math.random() * Math.max(1, xMax - xMin), xMax)
+        ),
+        y: Math.max(
+          yMin,
+          Math.min(yMin + Math.random() * Math.max(1, yMax - yMin), yMax)
+        ),
       };
     }
+
+    // Double-check that spawn position is within safe bounds
+    const safeDimensions = getSafeViewportDimensions();
+    spawnPos.x = Math.max(
+      0,
+      Math.min(spawnPos.x, safeDimensions.width - size.width)
+    );
+    spawnPos.y = Math.max(
+      0,
+      Math.min(spawnPos.y, safeDimensions.height - size.height)
+    );
+
     setPos(spawnPos);
     let vx = (Math.random() - 0.5) * 1.2;
     let vy = (Math.random() - 0.5) * 1.2;
@@ -119,7 +161,7 @@ function useBouncingElement(
     respawn();
   }, [respawnSignal, size.width, size.height]);
 
-  // Animation loop
+  // Animation loop - ensure movement stays within safe bounds
   useEffect(() => {
     if (isFrozen) return;
     let animationFrame: number;
@@ -129,16 +171,19 @@ function useBouncingElement(
         let { x, y } = prev;
         let { x: vx, y: vy } = vel;
         let width, height, left, top;
+
         if (boundaries) {
           left = boundaries.left;
           top = boundaries.top;
           width = boundaries.width;
           height = boundaries.height;
         } else {
+          // Use safe viewport dimensions
+          const safeDimensions = getSafeViewportDimensions();
           left = 0;
           top = 0;
-          width = viewport.width;
-          height = viewport.height;
+          width = safeDimensions.width;
+          height = safeDimensions.height;
         }
 
         const speedMultiplier = isMobile ? 2 : 1;
@@ -210,9 +255,12 @@ function useBouncingElement(
         }
 
         setVel({ x: vx, y: vy });
+
+        // Ensure final position stays within safe bounds
+        const safeDimensions = getSafeViewportDimensions();
         return {
-          x: Math.max(left, Math.min(nextX, left + width - size.width)),
-          y: Math.max(top, Math.min(nextY, top + height - size.height)),
+          x: Math.max(0, Math.min(nextX, safeDimensions.width - size.width)),
+          y: Math.max(0, Math.min(nextY, safeDimensions.height - size.height)),
         };
       });
       animationFrame = requestAnimationFrame(animate);
@@ -239,44 +287,72 @@ function useBouncingElement(
 }
 
 // Random spawn outside input - only above and below (not left/right)
+// Updated to accept viewport dimensions to prevent scrollbars
 function getRandomPositionOutsideInput(
   size: { width: number; height: number },
-  inputBounds?: { left: number; top: number; width: number; height: number }
+  inputBounds?: { left: number; top: number; width: number; height: number },
+  viewportDimensions?: { width: number; height: number }
 ) {
   if (typeof window === "undefined") return { x: 0, y: 0 };
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
+
+  // Use passed viewport dimensions or get safe ones
+  const { width: vw, height: vh } =
+    viewportDimensions || getSafeViewportDimensions();
+
   if (!inputBounds) {
     return {
-      x: Math.random() * (vw - size.width),
-      y: Math.random() * (vh - size.height),
+      x: Math.max(
+        0,
+        Math.min(Math.random() * (vw - size.width), vw - size.width)
+      ),
+      y: Math.max(
+        0,
+        Math.min(Math.random() * (vh - size.height), vh - size.height)
+      ),
     };
   }
+
   const regions = [
     // Only allow spawning above and below input box
     {
       xMin: 0,
-      xMax: vw - size.width,
+      xMax: Math.max(0, vw - size.width),
       yMin: 0,
-      yMax: inputBounds.top - size.height,
+      yMax: Math.max(0, inputBounds.top - size.height),
     },
     {
       xMin: 0,
-      xMax: vw - size.width,
+      xMax: Math.max(0, vw - size.width),
       yMin: inputBounds.top + inputBounds.height,
-      yMax: vh - size.height,
+      yMax: Math.max(inputBounds.top + inputBounds.height, vh - size.height),
     },
     // Removed left and right regions - they are now forbidden
   ].filter((r) => r.xMax > r.xMin && r.yMax > r.yMin);
-  if (!regions.length)
+
+  if (!regions.length) {
+    // Fallback to safe center position
     return {
-      x: Math.random() * (vw - size.width),
-      y: Math.random() * (vh - size.height),
+      x: Math.max(0, Math.min((vw - size.width) / 2, vw - size.width)),
+      y: Math.max(0, Math.min((vh - size.height) / 2, vh - size.height)),
     };
+  }
+
   const region = regions[Math.floor(Math.random() * regions.length)];
   return {
-    x: region.xMin + Math.random() * (region.xMax - region.xMin),
-    y: region.yMin + Math.random() * (region.yMax - region.yMin),
+    x: Math.max(
+      0,
+      Math.min(
+        region.xMin + Math.random() * (region.xMax - region.xMin),
+        vw - size.width
+      )
+    ),
+    y: Math.max(
+      0,
+      Math.min(
+        region.yMin + Math.random() * (region.yMax - region.yMin),
+        vh - size.height
+      )
+    ),
   };
 }
 
@@ -286,8 +362,7 @@ function clampToViewport(
   size: { width: number; height: number }
 ) {
   if (typeof window === "undefined") return { x, y };
-  const vw = window.innerWidth;
-  const vh = window.innerHeight;
+  const { width: vw, height: vh } = getSafeViewportDimensions();
   return {
     x: Math.max(0, Math.min(x, vw - size.width)),
     y: Math.max(0, Math.min(y, vh - size.height)),
@@ -422,15 +497,19 @@ export default function HomePage() {
   // Fixed viewport height management for mobile
   useEffect(() => {
     if (!isMobile) return;
-    const initialHeight = window.innerHeight;
+    const safeDimensions = getSafeViewportDimensions();
+    const initialHeight = safeDimensions.height;
     setInitialViewportHeight(initialHeight);
+
     function handleViewportChange() {
+      const currentSafeDimensions = getSafeViewportDimensions();
       document.documentElement.style.setProperty(
         "--app-vh",
-        `${initialHeight}px`
+        `${currentSafeDimensions.height}px`
       );
     }
     handleViewportChange();
+
     let timeoutId: NodeJS.Timeout;
     function debouncedHandleViewportChange() {
       clearTimeout(timeoutId);
@@ -461,8 +540,11 @@ export default function HomePage() {
   useEffect(() => {
     if (isMobile) return;
     function setVh() {
-      const vh = window.innerHeight;
-      document.documentElement.style.setProperty("--app-vh", `${vh}px`);
+      const safeDimensions = getSafeViewportDimensions();
+      document.documentElement.style.setProperty(
+        "--app-vh",
+        `${safeDimensions.height}px`
+      );
     }
     setVh();
     window.addEventListener("resize", setVh);
@@ -493,7 +575,7 @@ export default function HomePage() {
 
   // Sinhala logo bouncing
   const sinhalaLogo = useBouncingElement(
-    "කل්චර්®",
+    "කල්චර්®",
     isFrozen,
     isMobile,
     9999,
@@ -514,13 +596,14 @@ export default function HomePage() {
       if (isMobile) {
         setTimeout(() => {
           window.scrollTo(0, 0);
+          const safeDimensions = getSafeViewportDimensions();
           document.documentElement.style.setProperty(
             "--app-vh",
-            `${initialViewportHeight}px`
+            `${safeDimensions.height}px`
           );
           document.documentElement.style.overflow = "hidden";
           document.body.style.overflow = "hidden";
-          document.body.style.height = `${initialViewportHeight}px`;
+          document.body.style.height = `${safeDimensions.height}px`;
           void document.body.offsetHeight;
         }, 0);
       }
@@ -534,10 +617,12 @@ export default function HomePage() {
     const html = document.documentElement;
     const body = document.body;
     if (messages.length > 0) {
+      const safeDimensions = getSafeViewportDimensions();
+      const safeHeight = safeDimensions.height;
       html.style.overflow = "hidden";
-      html.style.height = `${initialViewportHeight || window.innerHeight}px`;
+      html.style.height = `${safeHeight}px`;
       body.style.overflow = "hidden";
-      body.style.height = `${initialViewportHeight || window.innerHeight}px`;
+      body.style.height = `${safeHeight}px`;
       body.style.position = "fixed";
       body.style.width = "100%";
       body.style.top = "0";
