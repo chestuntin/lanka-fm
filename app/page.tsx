@@ -10,42 +10,7 @@ import {
 } from "react";
 import Head from "next/head";
 import { Snowflake, Eye, EyeOff } from "lucide-react";
-
-// Define ChatInputProps interface
-interface ChatInputProps {
-  onSend: (message: string) => void;
-  placeholder?: string;
-  className?: string; // Added className prop
-}
-
-// ChatInput Component
-const ChatInput: React.FC<ChatInputProps> = ({
-  onSend,
-  placeholder,
-  className,
-}) => {
-  const [message, setMessage] = useState("");
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (message.trim()) {
-      onSend(message);
-      setMessage("");
-    }
-  };
-
-  return (
-    <form onSubmit={handleSubmit}>
-      <input
-        type="text"
-        value={message}
-        onChange={(e) => setMessage(e.target.value)}
-        placeholder={placeholder}
-        className={className}
-      />
-    </form>
-  );
-};
+import ChatInput from "@/components/ChatInput";
 
 // Type for a bouncing element
 type BouncingElement = {
@@ -74,6 +39,8 @@ function useIsMobile() {
 function getSafeViewportDimensions() {
   if (typeof window === "undefined") return { width: 0, height: 0 };
 
+  // Use the smaller of innerWidth/innerHeight and documentElement dimensions
+  // to ensure we stay within visible bounds
   const width = Math.min(
     window.innerWidth,
     document.documentElement.clientWidth || window.innerWidth
@@ -103,6 +70,7 @@ function useBouncingElement(
   const [size, setSize] = useState({ width: 48, height: 48 });
   const elementRef = useRef<HTMLDivElement>(null);
 
+  // Update viewport size (for Sinhala logo only) - use safe dimensions
   useEffect(() => {
     if (boundaries) return;
     function updateSize() {
@@ -114,6 +82,7 @@ function useBouncingElement(
     return () => window.removeEventListener("resize", updateSize);
   }, [boundaries]);
 
+  // Measure element size
   useEffect(() => {
     function updateSize() {
       if (elementRef.current) {
@@ -126,6 +95,7 @@ function useBouncingElement(
     return () => window.removeEventListener("resize", updateSize);
   }, [content]);
 
+  // Respawn logic - ensure spawning within safe viewport bounds
   const respawn = useCallback(() => {
     let left, top, width, height;
     if (boundaries) {
@@ -134,6 +104,7 @@ function useBouncingElement(
       width = boundaries.width;
       height = boundaries.height;
     } else {
+      // Use safe viewport dimensions to prevent scrollbars
       const safeDimensions = getSafeViewportDimensions();
       left = 0;
       top = 0;
@@ -166,6 +137,7 @@ function useBouncingElement(
       };
     }
 
+    // Double-check that spawn position is within safe bounds
     const safeDimensions = getSafeViewportDimensions();
     spawnPos.x = Math.max(
       0,
@@ -184,10 +156,12 @@ function useBouncingElement(
     setVel({ x: vx, y: vy });
   }, [boundaries, forbiddenRect, size, viewport]);
 
+  // Initial spawn and respawn on signal
   useEffect(() => {
     respawn();
   }, [respawnSignal, size.width, size.height]);
 
+  // Animation loop - ensure movement stays within safe bounds
   useEffect(() => {
     if (isFrozen) return;
     let animationFrame: number;
@@ -204,6 +178,7 @@ function useBouncingElement(
           width = boundaries.width;
           height = boundaries.height;
         } else {
+          // Use safe viewport dimensions
           const safeDimensions = getSafeViewportDimensions();
           left = 0;
           top = 0;
@@ -215,6 +190,7 @@ function useBouncingElement(
         let nextX = x + vx * speedMultiplier;
         let nextY = y + vy * speedMultiplier;
 
+        // Bounce off viewport edges
         if (nextX + size.width >= left + width) {
           vx = -Math.abs(vx);
           nextX = left + width - size.width;
@@ -230,18 +206,22 @@ function useBouncingElement(
           nextY = top;
         }
 
+        // FIXED: Only bounce off the actual input box bounds, not full width
         if (forbiddenRect) {
+          // Use actual input box bounds for collision
           const inputLeft = forbiddenRect.left;
           const inputRight = forbiddenRect.left + forbiddenRect.width;
           const inputTop = forbiddenRect.top;
           const inputBottom = forbiddenRect.top + forbiddenRect.height;
 
+          // Check if logo overlaps with input box
           const overlapsX =
             nextX + size.width > inputLeft && nextX < inputRight;
           const overlapsY =
             nextY + size.height > inputTop && nextY < inputBottom;
 
           if (overlapsX && overlapsY) {
+            // Calculate distances to each edge to determine best bounce direction
             const distToLeft = Math.abs(nextX + size.width - inputLeft);
             const distToRight = Math.abs(nextX - inputRight);
             const distToTop = Math.abs(nextY + size.height - inputTop);
@@ -255,15 +235,19 @@ function useBouncingElement(
             );
 
             if (minDist === distToLeft) {
+              // Bounce off left edge of input
               nextX = inputLeft - size.width;
               vx = -Math.abs(vx);
             } else if (minDist === distToRight) {
+              // Bounce off right edge of input
               nextX = inputRight;
               vx = Math.abs(vx);
             } else if (minDist === distToTop) {
+              // Bounce off top edge of input
               nextY = inputTop - size.height;
               vy = -Math.abs(vy);
             } else if (minDist === distToBottom) {
+              // Bounce off bottom edge of input
               nextY = inputBottom;
               vy = Math.abs(vy);
             }
@@ -272,6 +256,7 @@ function useBouncingElement(
 
         setVel({ x: vx, y: vy });
 
+        // Ensure final position stays within safe bounds
         const safeDimensions = getSafeViewportDimensions();
         return {
           x: Math.max(0, Math.min(nextX, safeDimensions.width - size.width)),
@@ -301,7 +286,8 @@ function useBouncingElement(
   return { pos, vel, elementRef, size, respawn };
 }
 
-// Random spawn outside input
+// Random spawn outside input - only above and below (not left/right)
+// Updated to accept viewport dimensions to prevent scrollbars
 function getRandomPositionOutsideInput(
   size: { width: number; height: number },
   inputBounds?: { left: number; top: number; width: number; height: number },
@@ -309,6 +295,7 @@ function getRandomPositionOutsideInput(
 ) {
   if (typeof window === "undefined") return { x: 0, y: 0 };
 
+  // Use passed viewport dimensions or get safe ones
   const { width: vw, height: vh } =
     viewportDimensions || getSafeViewportDimensions();
 
@@ -326,6 +313,7 @@ function getRandomPositionOutsideInput(
   }
 
   const regions = [
+    // Only allow spawning above and below input box
     {
       xMin: 0,
       xMax: Math.max(0, vw - size.width),
@@ -338,9 +326,11 @@ function getRandomPositionOutsideInput(
       yMin: inputBounds.top + inputBounds.height,
       yMax: Math.max(inputBounds.top + inputBounds.height, vh - size.height),
     },
+    // Removed left and right regions - they are now forbidden
   ].filter((r) => r.xMax > r.xMin && r.yMax > r.yMin);
 
   if (!regions.length) {
+    // Fallback to safe center position
     return {
       x: Math.max(0, Math.min((vw - size.width) / 2, vw - size.width)),
       y: Math.max(0, Math.min((vh - size.height) / 2, vh - size.height)),
@@ -420,7 +410,7 @@ function BouncingMessage({
         top: y,
         fontSize: Math.round(32 * 0.9),
         fontWeight: 400,
-        color: "#f8f8f8",
+        color: "#fff",
         userSelect: "none",
         zIndex,
         textShadow: "0 2px 8px #000, 0 0 2px #fff",
@@ -428,7 +418,7 @@ function BouncingMessage({
         fontFamily: "Helvetica Neue, Helvetica, Arial, sans-serif",
         pointerEvents: "none",
         boxSizing: "border-box",
-        paddingTop: "0.3em",
+        paddingTop: "0.3em", // small vertical buffer for ®
         margin: 0,
         lineHeight: 1,
         display: "inline-block",
@@ -455,41 +445,27 @@ function ControlPanel({
   setIsHidden: (hidden: boolean) => void;
 }) {
   return (
-    <div className="fixed top-6 left-6 z-[10000] flex flex-col gap-2">
-      <button
-        onClick={() => setIsFrozen(!isFrozen)}
-        className={`
-          w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200
-          ${
-            isFrozen
-              ? "bg-blue-500/80 text-white shadow-lg shadow-blue-500/25"
-              : "bg-gray-800/60 text-gray-300 hover:bg-gray-700/70 hover:text-white"
-          }
-          backdrop-blur-sm border border-gray-600/30 hover:border-gray-500/50
-        `}
+    <div className="fixed top-4 right-4 z-[10000] flex items-center gap-2">
+      <Toggle
+        pressed={isFrozen}
+        onPressedChange={setIsFrozen}
+        variant="outline"
         aria-label="Freeze logos"
       >
         <Snowflake className="h-4 w-4" />
-      </button>
-      <button
-        onClick={() => setIsHidden(!isHidden)}
-        className={`
-          w-10 h-10 rounded-lg flex items-center justify-center transition-all duration-200
-          ${
-            isHidden
-              ? "bg-purple-500/80 text-white shadow-lg shadow-purple-500/25"
-              : "bg-gray-800/60 text-gray-300 hover:bg-gray-700/70 hover:text-white"
-          }
-          backdrop-blur-sm border border-gray-600/30 hover:border-gray-500/50
-        `}
+      </Toggle>
+      <Toggle
+        pressed={isHidden}
+        onPressedChange={setIsHidden}
+        variant="outline"
         aria-label={isHidden ? "Show logos" : "Hide logos"}
       >
         {isHidden ? (
           <Eye className="h-4 w-4" />
         ) : (
           <EyeOff className="h-4 w-4" />
-        )}
-      </button>
+        )}{" "}
+      </Toggle>
     </div>
   );
 }
@@ -518,6 +494,7 @@ export default function HomePage() {
   const [spawnKey, setSpawnKey] = useState(0);
   const [initialViewportHeight, setInitialViewportHeight] = useState<number>(0);
 
+  // Fixed viewport height management for mobile
   useEffect(() => {
     if (!isMobile) return;
     const safeDimensions = getSafeViewportDimensions();
@@ -559,6 +536,7 @@ export default function HomePage() {
     };
   }, [isMobile]);
 
+  // Desktop viewport handling
   useEffect(() => {
     if (isMobile) return;
     function setVh() {
@@ -573,10 +551,12 @@ export default function HomePage() {
     return () => window.removeEventListener("resize", setVh);
   }, [isMobile]);
 
+  // Respawn on inputBounds change
   useEffect(() => {
     if (inputBounds?.width) setSpawnKey((k) => k + 1);
   }, [inputBounds]);
 
+  // Track chat area and input box boundaries
   useLayoutEffect(() => {
     function updateBounds() {
       if (chatAreaRef.current) {
@@ -593,6 +573,7 @@ export default function HomePage() {
     return () => window.removeEventListener("resize", () => {});
   }, []);
 
+  // Sinhala logo bouncing
   const sinhalaLogo = useBouncingElement(
     "කල්චර්®",
     isFrozen,
@@ -630,6 +611,7 @@ export default function HomePage() {
     });
   }
 
+  // Prevent scrolling on mobile
   useEffect(() => {
     if (!isMobile) return;
     const html = document.documentElement;
@@ -667,6 +649,7 @@ export default function HomePage() {
     };
   }, [messages.length, isMobile, initialViewportHeight]);
 
+  // Prevent touch scroll on logos
   useEffect(() => {
     const preventTouch = (e: TouchEvent) => {
       const t = e.target as HTMLElement;
@@ -702,6 +685,7 @@ export default function HomePage() {
         isHidden={isHidden}
         setIsHidden={setIsHidden}
       />
+      {/* Debug info */}
       <div className="hidden sm:block fixed top-2 left-2 bg-black/70 text-white rounded-md z-[10000] font-mono pointer-events-none px-3 py-1 text-[11px]">
         <div>
           කල්චර්® Position: x={sinhalaLogo.pos.x.toFixed(1)}, y=
@@ -730,7 +714,7 @@ export default function HomePage() {
             fontFamily: "Noto Sans Sinhala",
             pointerEvents: "none",
             boxSizing: "border-box",
-            paddingTop: "0.3em",
+            paddingTop: "0.3em", // small vertical buffer for ®
             margin: 0,
             lineHeight: 1,
             display: "inline-block",
@@ -766,12 +750,12 @@ export default function HomePage() {
           />
         ))}
       <div
-        className="flex items-center justify-center w-full px-4"
+        className="flex items-center justify-center w-full"
         style={{ minHeight: "var(--app-vh)" }}
       >
         <div
           ref={chatAreaRef}
-          className="w-full max-w-sm z-10 border border-gray-600/40 bg-transparent rounded-2xl m-0 p-6 flex flex-col justify-center items-center relative overflow-hidden shadow-2xl shadow-black/20 backdrop-blur-sm"
+          className="w-full max-w-md z-10 border border-[#f3f3f3] bg-transparent rounded-xl m-0 p-0 flex flex-col justify-center items-center relative overflow-hidden"
           style={{
             boxSizing: "border-box",
             position: "relative",
@@ -782,17 +766,12 @@ export default function HomePage() {
             ref={chatInputRef}
             className="w-full"
             style={{
+              outline: "2px dashed #f00",
               margin: 0,
               padding: 0,
             }}
           >
-            <div className="relative">
-              <ChatInput
-                onSend={handleSendMessage}
-                placeholder="Type something magical..."
-                className="w-full px-4 py-3 bg-gray-900/50 border border-gray-500/30 rounded-xl text-gray-100 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50 transition-all duration-200 backdrop-blur-sm"
-              />
-            </div>
+            <ChatInput onSend={handleSendMessage} placeholder="Type anything" />
           </div>
         </div>
       </div>
