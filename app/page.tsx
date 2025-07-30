@@ -9,7 +9,7 @@ import { useIsMobile } from "@/hooks/useIsMobile";
 import { useViewportHeight } from "@/hooks/useViewportHeight";
 import { useScrollPrevention } from "@/hooks/useScrollPrevention";
 import { useBoundsTracking } from "@/hooks/useBoundsTracking";
-import { BouncingLogo } from "@/components/bouncingLogo";
+import { BouncingLogo } from "@/components/BouncingLogo";
 import { BouncingMessage } from "@/components/BouncingMessage";
 import { ControlPanel } from "@/components/ControlPanel";
 import { DebugInfo } from "@/components/DebugInfo";
