@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState, Suspense } from "react";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 
@@ -10,7 +10,13 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Instagram, Youtube, Twitter, Globe, Music2 } from "lucide-react";
 
-/** ---------------- Types ---------------- */
+/* ---------- Next.js 14: viewport export (optional, silences warnings) ---------- */
+export const viewport = {
+  width: "device-width",
+  initialScale: 1,
+};
+
+/* ---------- Types ---------- */
 type Flags = {
   bgDrift: boolean;
   noiseOverlay: boolean;
@@ -22,21 +28,26 @@ type Flags = {
   hoverAltNames: boolean;
   hoverEmojis: boolean;
   consolePoetry: boolean;
-  shuffleDeck: boolean; // optional mild structural shuffle
-  accordionHover: boolean; // optional emphasis on hovered card
+  shuffleDeck: boolean;
+  accordionHover: boolean;
 };
 type FlagKey = keyof Flags;
 
-/**
- * links.kultjur.lk — clean, minimal link hub with subtle "coding-artist" effects.
- * Everything is non-annoying by default; fancy bits behind a Dev panel (?dev=1).
- */
+/* ---------- Page wrapper: Suspense needed for useSearchParams() ---------- */
 export default function LinksPage() {
+  return (
+    <Suspense fallback={null}>
+      <LinksContent />
+    </Suspense>
+  );
+}
+
+/* ---------- Main content ---------- */
+function LinksContent() {
   const search = useSearchParams();
   const devMode =
     search?.get("dev") === "1" || process.env.NODE_ENV !== "production";
 
-  /** ---------------- Data ---------------- */
   const baseLinks = useMemo(
     () => [
       {
@@ -78,7 +89,6 @@ export default function LinksPage() {
     []
   );
 
-  /** ---------------- Feature flags ---------------- */
   const [flags, setFlags] = useState<Flags>({
     bgDrift: true,
     noiseOverlay: true,
@@ -90,13 +100,12 @@ export default function LinksPage() {
     hoverAltNames: true,
     hoverEmojis: true,
     consolePoetry: true,
-    shuffleDeck: false, // off by default
-    accordionHover: false, // off by default
+    shuffleDeck: false,
+    accordionHover: false,
   });
-
   const toggle = (k: FlagKey) => setFlags((f) => ({ ...f, [k]: !f[k] }));
 
-  /** ---------------- Optional deck shuffle ---------------- */
+  // deck shuffle
   const [indices, setIndices] = useState(baseLinks.map((_, i) => i));
   useEffect(() => {
     if (!flags.shuffleDeck) return;
@@ -111,12 +120,11 @@ export default function LinksPage() {
     }, 8000);
     return () => clearInterval(id);
   }, [flags.shuffleDeck]);
-
   const links = flags.shuffleDeck
     ? indices.map((i) => baseLinks[i])
     : baseLinks;
 
-  /** ---------------- Typing title ---------------- */
+  // typing title
   const title = "KULTJUR®";
   const [typeStep, setTypeStep] = useState(
     flags.typingTitle ? 0 : title.length
@@ -128,7 +136,7 @@ export default function LinksPage() {
     let i = 0;
     const tick = () => {
       if (!mounted) return;
-      setTypeStep((prev) => Math.min(prev + 1, title.length));
+      setTypeStep((p) => Math.min(p + 1, title.length));
       i++;
       if (i <= title.length) setTimeout(tick, 90 + Math.random() * 90);
       else setTimeout(() => setTypeStep(0), 8000);
@@ -140,7 +148,7 @@ export default function LinksPage() {
     };
   }, [flags.typingTitle]);
 
-  /** ---------------- Clock ---------------- */
+  // clock
   const [now, setNow] = useState<Date | null>(
     flags.clockFooter ? new Date() : null
   );
@@ -150,7 +158,7 @@ export default function LinksPage() {
     return () => clearInterval(id);
   }, [flags.clockFooter]);
 
-  /** ---------------- Console poetry ---------------- */
+  // console poetry
   const poems = [
     "pixels remember what fingers forget",
     "glitches are just honest frames",
@@ -168,31 +176,25 @@ export default function LinksPage() {
     );
   };
 
-  /** ---------------- Hover state ---------------- */
   const [hoverIdx, setHoverIdx] = useState<number | null>(null);
 
   return (
     <div className="relative min-h-dvh w-full overflow-hidden bg-black text-white selection:bg-white/20">
-      {/* Animated background */}
       {flags.bgDrift && (
         <div className="pointer-events-none absolute inset-0 -z-10 animate-bg-drift opacity-[0.18]" />
       )}
-
-      {/* Noise overlay */}
       {flags.noiseOverlay && (
         <div className="pointer-events-none absolute inset-0 -z-10 noise-overlay opacity-[0.08]" />
       )}
 
       <main className="mx-auto flex min-h-dvh max-w-screen-sm flex-col items-center justify-center gap-8 px-4">
-        {/* Title */}
-        <h1 className="text-balance text-4xl font-bold tracking-tight text-white/95">
+        <h1 className="text-4xl font-bold tracking-tight text-white/95">
           {flags.typingTitle ? title.slice(0, typeStep) : title}
           <span className="ml-1 inline-block w-4 animate-caret-blink">
             {flags.typingTitle && typeStep < title.length ? "_" : ""}
           </span>
         </h1>
 
-        {/* Links */}
         <div
           className={`w-full ${
             flags.accordionHover ? "group/card" : ""
@@ -225,7 +227,7 @@ export default function LinksPage() {
                     href={link.url}
                     target="_blank"
                     onClick={logPoem}
-                    className={`group flex items-center gap-3 p-4 transition-[transform,background] duration-200 hover:bg-zinc-800/70 ${
+                    className={`group flex items-center gap-3 p-4 transition duration-200 hover:bg-zinc-800/70 ${
                       flags.pulseOnClick ? "active:scale-[0.985]" : ""
                     }`}
                   >
@@ -233,7 +235,7 @@ export default function LinksPage() {
                     <div className="flex min-w-0 flex-1 items-center justify-between">
                       <div className="min-w-0">
                         <div
-                          className={`truncate text-[15px]/tight font-medium ${
+                          className={`truncate text-[15px] font-medium ${
                             flags.textGlitchHover ? "glitch-on-hover" : ""
                           } ${flags.underlineSweep ? "underline-sweep" : ""}`}
                         >
@@ -254,7 +256,6 @@ export default function LinksPage() {
           })}
         </div>
 
-        {/* Footer */}
         <div className="mt-2 flex w-full items-center justify-between text-xs text-zinc-500">
           <span>© {new Date().getFullYear()} KULTJUR</span>
           {flags.clockFooter && now && (
@@ -264,13 +265,10 @@ export default function LinksPage() {
           )}
         </div>
 
-        {/* Dev toggles */}
         {devMode && <DevPanel flags={flags} toggle={toggle} />}
       </main>
 
-      {/* Styles */}
       <style jsx global>{`
-        /* Animated gradient backdrop */
         .animate-bg-drift {
           background: radial-gradient(
               60% 60% at 20% 20%,
@@ -300,7 +298,6 @@ export default function LinksPage() {
           }
         }
 
-        /* Subtle noise (pure CSS approximation) */
         .noise-overlay {
           background-image: repeating-linear-gradient(
               0deg,
@@ -319,7 +316,6 @@ export default function LinksPage() {
           mix-blend-mode: soft-light;
         }
 
-        /* Typing caret */
         @keyframes caretBlink {
           0%,
           49% {
@@ -334,14 +330,11 @@ export default function LinksPage() {
           animation: caretBlink 1s steps(1) infinite;
         }
 
-        /* Tiny glitch-on-hover: subtle shadow nudge */
         .glitch-on-hover:hover {
           text-shadow: -0.5px 0 rgba(255, 255, 255, 0.35),
             0.5px 0 rgba(0, 255, 200, 0.25);
-          transform: translateZ(0);
         }
 
-        /* Underline sweep using background */
         .underline-sweep {
           background-image: linear-gradient(currentColor, currentColor);
           background-size: 0% 1px;
@@ -357,7 +350,7 @@ export default function LinksPage() {
   );
 }
 
-/** ---------------- Dev Panel ---------------- */
+/* ---------- Dev Panel ---------- */
 function DevPanel({
   flags,
   toggle,
@@ -390,14 +383,17 @@ function DevPanel({
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
           {items.map(({ key, label }) => (
             <div
-              key={key}
+              key={String(key)}
               className="flex items-center justify-between gap-3 rounded-lg bg-zinc-900/60 px-3 py-2"
             >
-              <Label htmlFor={`sw-${key}`} className="text-xs text-zinc-300">
+              <Label
+                htmlFor={`sw-${String(key)}`}
+                className="text-xs text-zinc-300"
+              >
                 {label}
               </Label>
               <Switch
-                id={`sw-${key}`}
+                id={`sw-${String(key)}`}
                 checked={flags[key]}
                 onCheckedChange={() => toggle(key)}
               />
