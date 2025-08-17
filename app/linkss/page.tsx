@@ -118,7 +118,7 @@ export default function Page() {
             <div
               key={link.name}
               className="
-                relative w-full sm:w-[92%] md:w-[80%] lg:w-[65%] 
+                relative w-full sm:w-[92%] md:w-[80%] lg:w-[65%]
                 rounded-2xl
               "
             >
@@ -127,7 +127,7 @@ export default function Page() {
                 aria-hidden
                 className="
                   absolute inset-[-2px] z-0 rounded-[1.125rem]
-                  opacity-0 transition-opacity duration-250
+                  opacity-0 transition-opacity duration-200
                   hover:opacity-60 focus-within:opacity-60
                   pointer-events-none
                 "
@@ -135,7 +135,7 @@ export default function Page() {
                   background:
                     "conic-gradient(from 180deg at 50% 50%, #ff7a7a, #ffd166, #06d6a0, #4cc9f0, #b388ff, #ff7a7a)",
                   filter: "blur(16px) saturate(1.05)",
-                  mixBlendMode: "screen", // makes colors pop on dark bg
+                  mixBlendMode: "screen",
                 }}
               />
 
@@ -163,12 +163,14 @@ export default function Page() {
           ))}
         </div>
 
-        {/* Footer */}
-        <div className="mt-2 flex w-full items-center justify-between text-xs text-zinc-500">
-          <span>© 2025 KULTJUR</span>
-          <span className="font-mono tabular-nums">
-            {now.toLocaleTimeString()}
-          </span>
+        {/* Footer — same responsive width as tiles */}
+        <div className="w-full flex justify-center">
+          <div className="w-full sm:w-[92%] md:w-[80%] lg:w-[65%] flex items-center justify-between text-xs text-zinc-500 mt-2">
+            <span>© 2025 KULTJUR</span>
+            <span className="font-mono tabular-nums">
+              {now.toLocaleTimeString()}
+            </span>
+          </div>
         </div>
       </main>
     </div>
