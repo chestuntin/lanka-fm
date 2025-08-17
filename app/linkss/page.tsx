@@ -1,409 +1,138 @@
 "use client";
 
-import React, { useEffect, useMemo, useState, Suspense } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
-
 import { Card, CardContent } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Instagram, Youtube, Twitter, Globe, Music2 } from "lucide-react";
 
-/* ---------- Next.js 14: viewport export (optional, silences warnings) ---------- */
-export const viewport = {
-  width: "device-width",
-  initialScale: 1,
-};
+// Plain, minimal links page (no dev toggles, no gimmicks)
+// - Subtle glow behind each tile on hover/focus
+// - Soft hover sound for a light game-menu feel
+// - Footer shows local time + © 2025 KULTJUR
 
-/* ---------- Types ---------- */
-type Flags = {
-  bgDrift: boolean;
-  noiseOverlay: boolean;
-  underlineSweep: boolean;
-  textGlitchHover: boolean;
-  pulseOnClick: boolean;
-  typingTitle: boolean;
-  clockFooter: boolean;
-  hoverAltNames: boolean;
-  hoverEmojis: boolean;
-  consolePoetry: boolean;
-  shuffleDeck: boolean;
-  accordionHover: boolean;
-};
-type FlagKey = keyof Flags;
-
-/* ---------- Page wrapper: Suspense needed for useSearchParams() ---------- */
-export default function LinksPage() {
-  return (
-    <Suspense fallback={null}>
-      <LinksContent />
-    </Suspense>
-  );
-}
-
-/* ---------- Main content ---------- */
-function LinksContent() {
-  const search = useSearchParams();
-  const devMode =
-    search?.get("dev") === "1" || process.env.NODE_ENV !== "production";
-
-  const baseLinks = useMemo(
+export default function Page() {
+  const links = useMemo(
     () => [
       {
         name: "Instagram",
         url: "https://www.instagram.com/kultjur.lk",
-        icon: <Instagram className="w-5 h-5" />,
-        altHoverName: "Stalk Me",
-        emojiSet: ["🦖", "💿", "🌀", "✨", "📸"],
+        icon: <Instagram className="h-5 w-5" />,
       },
       {
         name: "TikTok",
         url: "https://www.tiktok.com/@kultjur",
-        icon: <Music2 className="w-5 h-5" />,
-        altHoverName: "Time Sink",
-        emojiSet: ["🪩", "🎛️", "⚡", "🧪", "🎵"],
+        icon: <Music2 className="h-5 w-5" />,
       },
       {
         name: "X (Twitter)",
         url: "https://x.com/kultjur",
-        icon: <Twitter className="w-5 h-5" />,
-        altHoverName: "Ex-Bird App",
-        emojiSet: ["🐍", "🛰️", "📡", "💬", "🧷"],
+        icon: <Twitter className="h-5 w-5" />,
       },
       {
         name: "YouTube",
         url: "https://www.youtube.com/@kultjurrr",
-        icon: <Youtube className="w-5 h-5" />,
-        altHoverName: "Longform Noise",
-        emojiSet: ["📼", "📺", "🔊", "🚀", "🧊"],
+        icon: <Youtube className="h-5 w-5" />,
       },
       {
         name: "Website",
         url: "https://kultjur.lk",
-        icon: <Globe className="w-5 h-5" />,
-        altHoverName: "HQ",
-        emojiSet: ["🌐", "🗺️", "🏁", "🧠", "💎"],
+        icon: <Globe className="h-5 w-5" />,
       },
     ],
     []
   );
 
-  const [flags, setFlags] = useState<Flags>({
-    bgDrift: true,
-    noiseOverlay: true,
-    underlineSweep: true,
-    textGlitchHover: true,
-    pulseOnClick: true,
-    typingTitle: true,
-    clockFooter: true,
-    hoverAltNames: true,
-    hoverEmojis: true,
-    consolePoetry: true,
-    shuffleDeck: false,
-    accordionHover: false,
-  });
-  const toggle = (k: FlagKey) => setFlags((f) => ({ ...f, [k]: !f[k] }));
-
-  // deck shuffle
-  const [indices, setIndices] = useState(baseLinks.map((_, i) => i));
+  // --- Local clock ---
+  const [now, setNow] = useState(new Date());
   useEffect(() => {
-    if (!flags.shuffleDeck) return;
-    const id = setInterval(() => {
-      setIndices((arr) => {
-        const a = [...arr];
-        const i = Math.floor(Math.random() * a.length);
-        const j = Math.floor(Math.random() * a.length);
-        [a[i], a[j]] = [a[j], a[i]];
-        return a;
-      });
-    }, 8000);
-    return () => clearInterval(id);
-  }, [flags.shuffleDeck]);
-  const links = flags.shuffleDeck
-    ? indices.map((i) => baseLinks[i])
-    : baseLinks;
-
-  // typing title
-  const title = "KULTJUR®";
-  const [typeStep, setTypeStep] = useState(
-    flags.typingTitle ? 0 : title.length
-  );
-  useEffect(() => {
-    if (!flags.typingTitle) return;
-    setTypeStep(0);
-    let mounted = true;
-    let i = 0;
-    const tick = () => {
-      if (!mounted) return;
-      setTypeStep((p) => Math.min(p + 1, title.length));
-      i++;
-      if (i <= title.length) setTimeout(tick, 90 + Math.random() * 90);
-      else setTimeout(() => setTypeStep(0), 8000);
-    };
-    const t = setTimeout(tick, 400);
-    return () => {
-      mounted = false;
-      clearTimeout(t);
-    };
-  }, [flags.typingTitle]);
-
-  // clock
-  const [now, setNow] = useState<Date | null>(
-    flags.clockFooter ? new Date() : null
-  );
-  useEffect(() => {
-    if (!flags.clockFooter) return;
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
-  }, [flags.clockFooter]);
+  }, []);
 
-  // console poetry
-  const poems = [
-    "pixels remember what fingers forget",
-    "glitches are just honest frames",
-    "syntax is a rhythm, not a rule",
-    "we debug to hear the code breathe",
-    "design is latency for the eye",
-  ];
-  const logPoem = () => {
-    if (!flags.consolePoetry) return;
-    const line = poems[Math.floor(Math.random() * poems.length)];
-    // eslint-disable-next-line no-console
-    console.log(
-      `%c${line}`,
-      "font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color:#9ae6b4"
-    );
-  };
-
-  const [hoverIdx, setHoverIdx] = useState<number | null>(null);
+  // --- Minimal WebAudio hover blip ---
+  const audioCtxRef = useRef<AudioContext | null>(null);
+  const gainRef = useRef<GainNode | null>(null);
+  function ensureAudio() {
+    if (typeof window === "undefined") return null;
+    if (!audioCtxRef.current) {
+      const Ctx =
+        (window as any).AudioContext || (window as any).webkitAudioContext;
+      if (!Ctx) return null;
+      const ctx = new Ctx();
+      const g = ctx.createGain();
+      g.gain.value = 0.05; // master volume (very soft)
+      g.connect(ctx.destination);
+      audioCtxRef.current = ctx;
+      gainRef.current = g;
+    }
+    if (audioCtxRef.current?.state === "suspended")
+      audioCtxRef.current.resume();
+    return audioCtxRef.current;
+  }
+  function playHoverBlip(idx: number) {
+    const ctx = ensureAudio();
+    const g = gainRef.current;
+    if (!ctx || !g) return;
+    const osc = ctx.createOscillator();
+    const env = ctx.createGain();
+    const filt = ctx.createBiquadFilter();
+    // small pitch step per index for variety
+    osc.type = "square";
+    osc.frequency.value = 220 * (1 + idx * 0.06);
+    filt.type = "lowpass";
+    filt.frequency.value = 1800;
+    const t = ctx.currentTime;
+    env.gain.setValueAtTime(0.0001, t);
+    env.gain.exponentialRampToValueAtTime(1.0, t + 0.01);
+    env.gain.exponentialRampToValueAtTime(0.0001, t + 0.09);
+    osc.connect(filt).connect(env).connect(g);
+    osc.start(t);
+    osc.stop(t + 0.12);
+  }
 
   return (
-    <div className="relative min-h-dvh w-full overflow-hidden bg-black text-white selection:bg-white/20">
-      {flags.bgDrift && (
-        <div className="pointer-events-none absolute inset-0 -z-10 animate-bg-drift opacity-[0.18]" />
-      )}
-      {flags.noiseOverlay && (
-        <div className="pointer-events-none absolute inset-0 -z-10 noise-overlay opacity-[0.08]" />
-      )}
-
+    <div className="relative min-h-dvh w-full overflow-hidden bg-black text-white">
       <main className="mx-auto flex min-h-dvh max-w-screen-sm flex-col items-center justify-center gap-8 px-4">
+        {/* Title */}
         <h1 className="text-4xl font-bold tracking-tight text-white/95">
-          {flags.typingTitle ? title.slice(0, typeStep) : title}
-          <span className="ml-1 inline-block w-4 animate-caret-blink">
-            {flags.typingTitle && typeStep < title.length ? "_" : ""}
-          </span>
+          KULTJUR®
         </h1>
 
-        <div
-          className={`w-full ${
-            flags.accordionHover ? "group/card" : ""
-          } flex flex-col gap-4`}
-        >
-          {links.map((link, idx) => {
-            const showAlt = flags.hoverAltNames && hoverIdx === idx;
-            const emoji =
-              flags.hoverEmojis && hoverIdx === idx
-                ? link.emojiSet[
-                    Math.floor(Math.random() * link.emojiSet.length)
-                  ]
-                : null;
-
-            return (
-              <Card
-                key={link.name + idx}
-                className={`bg-zinc-900/70 border border-zinc-800/70 backdrop-blur-sm transition-all ${
-                  flags.accordionHover && hoverIdx !== null
-                    ? hoverIdx === idx
-                      ? "scale-[1.02]"
-                      : "scale-[0.98] opacity-90"
-                    : ""
-                }`}
-                onMouseEnter={() => setHoverIdx(idx)}
-                onMouseLeave={() => setHoverIdx(null)}
-              >
-                <CardContent className="p-0">
-                  <Link
-                    href={link.url}
-                    target="_blank"
-                    onClick={logPoem}
-                    className={`group flex items-center gap-3 p-4 transition duration-200 hover:bg-zinc-800/70 ${
-                      flags.pulseOnClick ? "active:scale-[0.985]" : ""
-                    }`}
-                  >
-                    {link.icon}
-                    <div className="flex min-w-0 flex-1 items-center justify-between">
-                      <div className="min-w-0">
-                        <div
-                          className={`truncate text-[15px] font-medium ${
-                            flags.textGlitchHover ? "glitch-on-hover" : ""
-                          } ${flags.underlineSweep ? "underline-sweep" : ""}`}
-                        >
-                          {showAlt ? link.altHoverName : link.name}
-                        </div>
-                        {showAlt && (
-                          <div className="text-xs text-zinc-400">
-                            {link.name}
-                          </div>
-                        )}
-                      </div>
-                      <div className="shrink-0 pl-2 text-lg">{emoji}</div>
-                    </div>
-                  </Link>
-                </CardContent>
-              </Card>
-            );
-          })}
-        </div>
-
-        <div className="mt-2 flex w-full items-center justify-between text-xs text-zinc-500">
-          <span>© {new Date().getFullYear()} KULTJUR</span>
-          {flags.clockFooter && now && (
-            <span className="font-mono tabular-nums">
-              {now.toLocaleTimeString()}
-            </span>
-          )}
-        </div>
-
-        {devMode && <DevPanel flags={flags} toggle={toggle} />}
-      </main>
-
-      <style jsx global>{`
-        .animate-bg-drift {
-          background: radial-gradient(
-              60% 60% at 20% 20%,
-              rgba(0, 255, 170, 0.35),
-              transparent 60%
-            ),
-            radial-gradient(
-              50% 50% at 80% 30%,
-              rgba(0, 200, 255, 0.28),
-              transparent 60%
-            ),
-            radial-gradient(
-              70% 70% at 40% 80%,
-              rgba(255, 0, 170, 0.2),
-              transparent 60%
-            );
-          background-size: 140% 140%, 120% 120%, 160% 160%;
-          animation: driftA 22s linear infinite alternate;
-          filter: blur(40px);
-        }
-        @keyframes driftA {
-          0% {
-            background-position: 0% 0%, 100% 20%, 0% 100%;
-          }
-          100% {
-            background-position: 100% 60%, 0% 80%, 100% 0%;
-          }
-        }
-
-        .noise-overlay {
-          background-image: repeating-linear-gradient(
-              0deg,
-              rgba(255, 255, 255, 0.02) 0px,
-              rgba(255, 255, 255, 0.02) 1px,
-              transparent 1px,
-              transparent 2px
-            ),
-            repeating-linear-gradient(
-              90deg,
-              rgba(255, 255, 255, 0.02) 0px,
-              rgba(255, 255, 255, 0.02) 1px,
-              transparent 1px,
-              transparent 2px
-            );
-          mix-blend-mode: soft-light;
-        }
-
-        @keyframes caretBlink {
-          0%,
-          49% {
-            opacity: 1;
-          }
-          50%,
-          100% {
-            opacity: 0;
-          }
-        }
-        .animate-caret-blink {
-          animation: caretBlink 1s steps(1) infinite;
-        }
-
-        .glitch-on-hover:hover {
-          text-shadow: -0.5px 0 rgba(255, 255, 255, 0.35),
-            0.5px 0 rgba(0, 255, 200, 0.25);
-        }
-
-        .underline-sweep {
-          background-image: linear-gradient(currentColor, currentColor);
-          background-size: 0% 1px;
-          background-repeat: no-repeat;
-          background-position: 0 100%;
-          transition: background-size 200ms ease;
-        }
-        a:hover .underline-sweep {
-          background-size: 100% 1px;
-        }
-      `}</style>
-    </div>
-  );
-}
-
-/* ---------- Dev Panel ---------- */
-function DevPanel({
-  flags,
-  toggle,
-}: {
-  flags: Flags;
-  toggle: (k: FlagKey) => void;
-}) {
-  const items: Array<{ key: FlagKey; label: string }> = [
-    { key: "bgDrift", label: "Animated gradient background" },
-    { key: "noiseOverlay", label: "Subtle noise overlay" },
-    { key: "underlineSweep", label: "Underline sweep (hover)" },
-    { key: "textGlitchHover", label: "Tiny text glitch (hover)" },
-    { key: "pulseOnClick", label: "Pulse on click" },
-    { key: "typingTitle", label: "Typing title" },
-    { key: "clockFooter", label: "Live clock in footer" },
-    { key: "hoverAltNames", label: "Alt names on hover (funny)" },
-    { key: "hoverEmojis", label: "Hover emoji pepper" },
-    { key: "consolePoetry", label: "Console poetry on click" },
-    { key: "shuffleDeck", label: "Occasional deck shuffle (structure)" },
-    { key: "accordionHover", label: "Accordion hover emphasis" },
-  ];
-
-  return (
-    <Card className="w-full border-zinc-800 bg-zinc-950/70">
-      <CardContent className="p-4">
-        <div className="mb-2 flex items-center justify-between">
-          <div className="text-sm font-medium text-zinc-300">Dev toggles</div>
-          <div className="text-xs text-zinc-500">(add ?dev=1 to URL)</div>
-        </div>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
-          {items.map(({ key, label }) => (
-            <div
-              key={String(key)}
-              className="flex items-center justify-between gap-3 rounded-lg bg-zinc-900/60 px-3 py-2"
+        {/* Links stack */}
+        <div className="w-full flex flex-col gap-4">
+          {links.map((link, idx) => (
+            <Card
+              key={link.name}
+              className="relative overflow-hidden border border-zinc-800 bg-zinc-900/80 backdrop-blur-sm"
             >
-              <Label
-                htmlFor={`sw-${String(key)}`}
-                className="text-xs text-zinc-300"
-              >
-                {label}
-              </Label>
-              <Switch
-                id={`sw-${String(key)}`}
-                checked={flags[key]}
-                onCheckedChange={() => toggle(key)}
+              {/* Glow layer */}
+              <div
+                aria-hidden
+                className="pointer-events-none absolute inset-0 -z-10 scale-105 rounded-xl bg-[radial-gradient(40%_60%_at_50%_50%,rgba(0,255,200,0.18),transparent_70%)] blur-xl opacity-0 transition duration-200 group-hover:opacity-100 group-focus-within:opacity-100"
               />
-            </div>
+              <CardContent className="p-0">
+                <Link
+                  href={link.url}
+                  target="_blank"
+                  className="group flex items-center gap-3 p-4 transition-colors hover:bg-zinc-800/70 focus-visible:bg-zinc-800/70 outline-none"
+                  onMouseEnter={() => playHoverBlip(idx)}
+                >
+                  {link.icon}
+                  <span className="font-medium">{link.name}</span>
+                </Link>
+              </CardContent>
+            </Card>
           ))}
         </div>
-        <div className="mt-3 text-[11px] text-zinc-500">
-          These effects are intentionally subtle; keep them tasteful in prod. 💅
+
+        {/* Footer */}
+        <div className="mt-2 flex w-full items-center justify-between text-xs text-zinc-500">
+          <span>© 2025 KULTJUR</span>
+          <span className="font-mono tabular-nums">
+            {now.toLocaleTimeString()}
+          </span>
         </div>
-      </CardContent>
-    </Card>
+      </main>
+    </div>
   );
 }
