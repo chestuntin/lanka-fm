@@ -1,4 +1,7 @@
-import React from "react";
+// app/links/[slug]/page.tsx
+export const runtime = "nodejs"; // required for fs/compileMDX on Vercel
+export const dynamic = "force-dynamic"; // reading from filesystem per request
+
 import fs from "fs/promises";
 import path from "path";
 import { compileMDX } from "next-mdx-remote/rsc";
@@ -20,7 +23,6 @@ import remarkMdxFrontmatter from "remark-mdx-frontmatter";
 import remarkGfm from "remark-gfm";
 import remarkDeflist from "remark-deflist";
 
-// ✅ Import motion & physics components from separate files
 import {
   MotionDiv,
   MotionHeading,
@@ -28,8 +30,7 @@ import {
   MotionSpan,
   MotionSection,
 } from "@/components/ClientMotion";
-
-import { BouncyBall } from "@/components/ReactSpring"; // ✅ Imported from the client component
+import { BouncyBall } from "@/components/ReactSpring";
 
 const contentDir = path.join(process.cwd(), "content");
 
@@ -44,7 +45,7 @@ export default async function ArticlePage({
   params: { slug: string };
 }) {
   const filePath = path.join(contentDir, `${params.slug}.mdx`);
-  let source;
+  let source: string;
 
   try {
     source = await fs.readFile(filePath, "utf8");
@@ -61,7 +62,6 @@ export default async function ArticlePage({
   const { content: MdxContent, frontmatter } = await compileMDX<Frontmatter>({
     source,
     components: {
-      // UI components
       Carousel,
       CarouselContent,
       CarouselItem,
@@ -83,18 +83,12 @@ export default async function ArticlePage({
       MyButton,
       Table,
       Link,
-
-      // Motion components - explicitly mapped
       MotionDiv,
       MotionHeading,
       MotionParagraph,
       MotionSpan,
       MotionSection,
-
-      // ✅ Add React Spring component here
       BouncyBall,
-
-      // List handling
       li: (props: any) => {
         const firstChild = props.children && props.children[0];
         const isTaskItem =
@@ -107,11 +101,10 @@ export default async function ArticlePage({
           let textContent = "";
 
           if (firstChild.props.children) {
-            if (typeof firstChild.props.children === "string") {
+            if (typeof firstChild.props.children === "string")
               textContent = firstChild.props.children;
-            } else if (Array.isArray(firstChild.props.children)) {
+            else if (Array.isArray(firstChild.props.children))
               textContent = firstChild.props.children.join("");
-            }
           }
 
           if (
@@ -121,19 +114,17 @@ export default async function ArticlePage({
           ) {
             textContent = props.children
               .slice(1)
-              .map((child: any) => {
-                if (typeof child === "string") return child;
-                if (child?.props?.children) return child.props.children;
-                return "";
-              })
+              .map((child: any) =>
+                typeof child === "string" ? child : child?.props?.children ?? ""
+              )
               .join("");
           }
 
-          if (!textContent && props.node && props.node.children) {
+          if (!textContent && props.node?.children) {
             const textNodes = props.node.children.filter(
-              (child: any) => child.type === "text"
+              (c: any) => c.type === "text"
             );
-            textContent = textNodes.map((node: any) => node.value).join("");
+            textContent = textNodes.map((n: any) => n.value).join("");
           }
 
           return (
@@ -145,17 +136,15 @@ export default async function ArticlePage({
 
         return <li {...props} />;
       },
-      input: (props: any) => {
-        if (props.type === "checkbox") {
-          return (
-            <input
-              {...props}
-              className="w-5 h-5 accent-blue-500 cursor-pointer"
-            />
-          );
-        }
-        return <input {...props} />;
-      },
+      input: (props: any) =>
+        props.type === "checkbox" ? (
+          <input
+            {...props}
+            className="w-5 h-5 accent-blue-500 cursor-pointer"
+          />
+        ) : (
+          <input {...props} />
+        ),
     },
     options: {
       parseFrontmatter: true,
