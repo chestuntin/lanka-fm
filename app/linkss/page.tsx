@@ -37,14 +37,14 @@ export default function Page() {
     []
   );
 
-  // --- Local clock ---
+  // Local clock
   const [now, setNow] = useState(new Date());
   useEffect(() => {
     const id = setInterval(() => setNow(new Date()), 1000);
     return () => clearInterval(id);
   }, []);
 
-  // --- Minimal WebAudio hover blip (with unlock) ---
+  // --- Minimal WebAudio hover blip (requires first user interaction) ---
   const audioCtxRef = useRef<AudioContext | null>(null);
   const gainRef = useRef<GainNode | null>(null);
 
@@ -56,7 +56,7 @@ export default function Page() {
       if (!Ctx) return null;
       const ctx = new Ctx();
       const g = ctx.createGain();
-      g.gain.value = 0.08; // master volume (subtle but audible)
+      g.gain.value = 0.08; // subtle volume
       g.connect(ctx.destination);
       audioCtxRef.current = ctx;
       gainRef.current = g;
@@ -66,7 +66,7 @@ export default function Page() {
     return audioCtxRef.current;
   };
 
-  // unlock on first interaction (required by Safari/Chrome)
+  // Unlock audio on first interaction (mobile/desktop)
   useEffect(() => {
     const unlock = () => {
       ensureAudio();
@@ -79,7 +79,7 @@ export default function Page() {
     };
   }, []);
 
-  function playHoverBlip(idx: number) {
+  function playHoverBlip(index: number) {
     const ctx = ensureAudio();
     const g = gainRef.current;
     if (!ctx || !g) return;
@@ -88,11 +88,11 @@ export default function Page() {
     const env = ctx.createGain();
     const filt = ctx.createBiquadFilter();
 
-    // gentle, rounded blip
-    osc.type = "sine"; // smoother than square
-    osc.frequency.value = 420 + idx * 18; // slight pitch step per item
+    // rounded UI blip
+    osc.type = "sine";
+    osc.frequency.value = 420 + index * 18; // tiny step per item
     filt.type = "lowpass";
-    filt.frequency.value = 2000;
+    filt.frequency.value = 2200;
 
     const t = ctx.currentTime;
     env.gain.setValueAtTime(0.0001, t);
@@ -117,31 +117,26 @@ export default function Page() {
           {links.map((link, idx) => (
             <Card
               key={link.name}
-              className="relative overflow-hidden border border-zinc-800/80 bg-zinc-900/80 backdrop-blur-sm rounded-2xl"
+              className="relative overflow-visible border border-zinc-800/80 bg-zinc-900/80 backdrop-blur-sm rounded-2xl"
             >
-              {/* Apple-ish rainbow stroke + glow (appears on hover/focus) */}
+              {/* Rainbow stroke + soft glow (Apple-ish) */}
               <span
                 aria-hidden
                 className="
-                  pointer-events-none absolute inset-0 -z-10 rounded-[1.25rem]
+                  pointer-events-none absolute inset-[-2px] -z-10 rounded-[1.125rem]
                   opacity-0 transition-opacity duration-200
                   group-hover:opacity-100 group-focus-within:opacity-100
                 "
                 style={{
-                  // conic rainbow ring + soft outer glow
                   background:
-                    "conic-gradient(from 180deg at 50% 50%, #ff6b6b, #ffd166, #06d6a0, #4cc9f0, #b388ff, #ff6b6b)",
-                  mask: "linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0) border-box",
-                  WebkitMask:
-                    "linear-gradient(#000 0 0) padding-box, linear-gradient(#000 0 0) border-box",
-                  border: "1px solid transparent",
-                  // create a thin rainbow stroke outside the card edges
-                  padding: "1px",
-                  filter: "blur(10px) saturate(1.1)",
+                    "conic-gradient(from 180deg at 50% 50%, #ff7a7a, #ffd166, #06d6a0, #4cc9f0, #b388ff, #ff7a7a)",
+                  // soft outer glow
+                  filter: "blur(14px) saturate(1.05)",
                 }}
               />
+
               <CardContent className="relative p-0">
-                {/* inner stroke to separate card from glow */}
+                {/* hairline inner stroke so the card edge stays crisp */}
                 <div className="pointer-events-none absolute inset-0 rounded-2xl ring-1 ring-inset ring-white/5" />
 
                 <Link
