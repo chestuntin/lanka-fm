@@ -26,8 +26,7 @@ const projects = [
       "Logo suite (Sinhala/Latin), grid, typography scale, color system, and social templates.",
     tags: ["Branding", "Typography", "Logo", "Guidelines"],
     links: { live: "https://kultjur.lk", repo: undefined },
-    thumb:
-      "https://images.unsplash.com/photo-1512950050685-b1d4ae63d6b0?q=80&w=1600&auto=format&fit=crop",
+    thumb: "/portfolio/kultjur-logo-7.png",
     status: "Case Study",
   },
   {
@@ -56,11 +55,10 @@ const skills = [
   { name: "Adobe Illustrator", level: 90 },
   { name: "Adobe Photoshop", level: 88 },
   { name: "Figma", level: 85 },
-  { name: "InDesign", level: 75 },
   { name: "Typography & Grids", level: 90 },
   { name: "Color Systems", level: 85 },
-  { name: "After Effects (motion)", level: 78 },
-  { name: "Premiere Pro (edits)", level: 80 },
+  { name: "After Effects (Motion)", level: 78 },
+  { name: "Premiere Pro (Edits)", level: 80 },
 ];
 
 const experiences = [
@@ -102,7 +100,7 @@ export default function PortfolioPage() {
           >
             I’m Chenuka — a{" "}
             <span className="text-indigo-400">graphic designer</span> crafting
-            bold, clean brand systems and socials. (Video editor on the side.)
+            bold, clean brand systems and socials.
           </motion.h1>
           <motion.p
             initial={{ opacity: 0, y: 20 }}
@@ -121,20 +119,24 @@ export default function PortfolioPage() {
             transition={{ duration: 0.7, delay: 0.1 }}
             className="mt-8 flex flex-wrap items-center gap-3"
           >
-            <a
-              href="#projects"
+            <button
+              onClick={() =>
+                document
+                  .getElementById("projects")
+                  ?.scrollIntoView({ behavior: "smooth" })
+              }
               className="rounded-2xl bg-indigo-500 px-4 py-2 text-sm font-medium hover:bg-indigo-400 transition"
             >
               View Projects
-            </a>
+            </button>
             <a
-              href="#contact"
+              href="mailto:jchenuka@gmail.com"
               className="rounded-2xl border border-neutral-700 px-4 py-2 text-sm font-medium hover:bg-neutral-900 transition"
             >
               Contact
             </a>
             <div className="ml-auto flex gap-2 text-neutral-300">
-              <IconLink href="mailto:chenuka@example.com" label="Email">
+              <IconLink href="mailto:jchenuka@gmail.com" label="Email">
                 <Mail className="h-5 w-5" />
               </IconLink>
               <IconLink href="https://github.com/your" label="GitHub">
@@ -326,7 +328,7 @@ export default function PortfolioPage() {
             </div>
             <div className="flex gap-3">
               <a
-                href="mailto:chenuka@example.com"
+                href="mailto:jchenuka@gmail.com"
                 className="inline-flex items-center gap-2 rounded-2xl bg-indigo-500 px-4 py-2 text-sm font-medium hover:bg-indigo-400 transition"
               >
                 <Mail className="h-4 w-4" /> Email me
