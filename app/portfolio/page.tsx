@@ -40,7 +40,7 @@ const projects: Project[] = [
     status: "Case Study",
     slides: [
       { type: "image", src: "/portfolio/brand-identity/kultjur-logo-7.png" },
-      // Add more identity slides here later (color system, grids, mockups, etc.)
+      // Add identity slides later (color system, grids, mockups, etc.)
     ],
   },
   {
@@ -202,10 +202,7 @@ export default function PortfolioPage() {
 
       {/* Projects */}
       <section id="projects" className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
-        <Header
-          title="Selected Work"
-          subtitle="Case studies, not just links."
-        />
+        <Header title="Selected Work" />
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
           {projects.map((p, i) => (
             <motion.article
@@ -227,7 +224,7 @@ export default function PortfolioPage() {
                 <img
                   src={p.thumb}
                   alt="thumbnail"
-                  className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
+                  className="h-full w-full object-contain bg-neutral-900 transition-transform duration-300 group-hover:scale-105"
                 />
               </div>
               <div className="p-4">
@@ -480,92 +477,91 @@ function Lightbox({
     setStartX(null);
   };
 
+  if (!isOpen) return null;
   const slide = slides[index];
 
   return (
     <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          key="backdrop"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm"
-          onClick={onClose}
+      <motion.div
+        key="backdrop"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm"
+        onClick={onClose}
+      >
+        <div
+          className="absolute inset-0 flex items-center justify-center"
+          onClick={(e) => e.stopPropagation()}
         >
-          <div
-            className="absolute inset-0 flex items-center justify-center"
-            onClick={(e) => e.stopPropagation()}
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="relative max-h-[90vh] w-[min(92vw,900px)]"
+            onPointerDown={onPointerDown}
+            onPointerUp={onPointerUp}
           >
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="relative max-h-[90vh] w-[min(92vw,900px)]"
-              onPointerDown={onPointerDown}
-              onPointerUp={onPointerUp}
+            <button
+              aria-label="Close"
+              onClick={onClose}
+              className="absolute -right-2 -top-2 rounded-full bg-white/10 p-2 ring-1 ring-white/20 hover:bg-white/20"
             >
-              <button
-                aria-label="Close"
-                onClick={onClose}
-                className="absolute -right-2 -top-2 rounded-full bg-white/10 p-2 ring-1 ring-white/20 hover:bg-white/20"
-              >
-                <X className="h-5 w-5" />
-              </button>
-              {/* Media */}
-              {slide?.type === "video" ? (
-                <video
-                  src={slide.src}
-                  poster={slide.poster}
-                  className="max-h-[90vh] w-full rounded-xl object-contain"
-                  autoPlay
-                  muted
-                  controls
-                  playsInline
-                />
-              ) : (
-                <img
-                  src={slide?.src}
-                  className="max-h-[90vh] w-full rounded-xl object-contain"
-                  alt="slide"
-                />
-              )}
-              {/* Controls */}
-              {slides.length > 1 && (
-                <div className="pointer-events-none absolute inset-0 flex items-center justify-between">
-                  <button
-                    onClick={onPrev}
-                    className="pointer-events-auto ml-2 rounded-full bg-white/10 p-2 ring-1 ring-white/20 hover:bg-white/20"
-                  >
-                    <ChevronLeft className="h-6 w-6" />
-                  </button>
-                  <button
-                    onClick={onNext}
-                    className="pointer-events-auto mr-2 rounded-full bg-white/10 p-2 ring-1 ring-white/20 hover:bg-white/20"
-                  >
-                    <ChevronRight className="h-6 w-6" />
-                  </button>
-                </div>
-              )}
-              {/* Dots */}
-              {slides.length > 1 && (
-                <div className="mt-3 flex justify-center gap-1">
-                  {slides.map((_, i) => (
-                    <span
-                      key={i}
-                      className={`h-1.5 w-4 rounded-full ${
-                        i === index ? "bg-white" : "bg-white/30"
-                      }`}
-                    />
-                  ))}
-                </div>
-              )}
-            </motion.div>
-          </div>
-        </motion.div>
-      )}
+              <X className="h-5 w-5" />
+            </button>
+            {/* Media */}
+            {slide?.type === "video" ? (
+              <video
+                src={slide.src}
+                poster={slide.poster}
+                className="max-h-[90vh] w-full rounded-xl object-contain"
+                autoPlay
+                muted
+                controls
+                playsInline
+              />
+            ) : (
+              <img
+                src={slide?.src}
+                className="max-h-[90vh] w-full rounded-xl object-contain"
+                alt="slide"
+              />
+            )}
+            {/* Controls */}
+            {slides.length > 1 && (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-between">
+                <button
+                  onClick={onPrev}
+                  className="pointer-events-auto ml-2 rounded-full bg-white/10 p-2 ring-1 ring-white/20 hover:bg-white/20"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+                <button
+                  onClick={onNext}
+                  className="pointer-events-auto mr-2 rounded-full bg-white/10 p-2 ring-1 ring-white/20 hover:bg-white/20"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              </div>
+            )}
+            {/* Dots */}
+            {slides.length > 1 && (
+              <div className="mt-3 flex justify-center gap-1">
+                {slides.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`h-1.5 w-4 rounded-full ${
+                      i === index ? "bg-white" : "bg-white/30"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </motion.div>
+        </div>
+      </motion.div>
     </AnimatePresence>
   );
 }
