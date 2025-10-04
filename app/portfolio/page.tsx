@@ -14,10 +14,9 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-// ---
-// Portfolio Page (drop into app/portfolio/page.tsx)
-// TailwindCSS + framer-motion + lucide-react required
-// ---
+// -----------------------------
+// Types
+// -----------------------------
 
 type Slide = { type: "image" | "video"; src: string; poster?: string };
 
@@ -30,6 +29,10 @@ type Project = {
   slides: Slide[];
 };
 
+// -----------------------------
+// Data
+// -----------------------------
+
 const projects: Project[] = [
   {
     title: "KULTJUR® Brand Identity System",
@@ -40,7 +43,6 @@ const projects: Project[] = [
     status: "Case Study",
     slides: [
       { type: "image", src: "/portfolio/brand-identity/kultjur-logo-7.png" },
-      // Add identity slides later (color system, grids, mockups, etc.)
     ],
   },
   {
@@ -64,18 +66,19 @@ const projects: Project[] = [
     ],
   },
   {
-    title: "Poster Series — LankaCore Minimal",
+    title: "Business Satire Pack — 6 Slides",
     blurb:
-      "Monochrome type‑driven posters exploring Sinhala/English harmony, grid & rhythm.",
-    tags: ["Poster", "Grid", "Type", "Print"],
-    thumb:
-      "https://images.unsplash.com/photo-1511765224389-37f0e77cf0eb?q=80&w=1600&auto=format&fit=crop",
-    status: "WIP",
+      "Fast, spicy carousel exploring Sri Lankan business culture with bold type & humor.",
+    tags: ["Social", "Satire", "4:5", "Photoshop"],
+    thumb: "/portfolio/third-pack/artboard-1.png",
+    status: "Case Study",
     slides: [
-      {
-        type: "image",
-        src: "https://images.unsplash.com/photo-1511765224389-37f0e77cf0eb?q=80&w=1600&auto=format&fit=crop",
-      },
+      { type: "image", src: "/portfolio/third-pack/artboard-1.png" },
+      { type: "image", src: "/portfolio/third-pack/artboard-2.png" },
+      { type: "image", src: "/portfolio/third-pack/artboard-3.png" },
+      { type: "image", src: "/portfolio/third-pack/artboard-4.png" },
+      { type: "image", src: "/portfolio/third-pack/artboard-5.png" },
+      { type: "image", src: "/portfolio/third-pack/artboard-6.png" },
     ],
   },
 ];
@@ -112,6 +115,10 @@ const experiences = [
     ],
   },
 ];
+
+// -----------------------------
+// Page
+// -----------------------------
 
 export default function PortfolioPage() {
   const [isOpen, setIsOpen] = useState(false);
@@ -201,9 +208,9 @@ export default function PortfolioPage() {
       </section>
 
       {/* Projects */}
-      <section id="projects" className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
+      <section id="projects" className="mx-auto max-w-6xl px-4 sm:px-6 py-8">
         <Header title="Selected Work" />
-        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
           {projects.map((p, i) => (
             <motion.article
               key={p.title}
@@ -260,9 +267,9 @@ export default function PortfolioPage() {
       </section>
 
       {/* Skills */}
-      <section className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
+      <section className="mx-auto max-w-6xl px-4 sm:px-6 py-8">
         <Header title="Core Skills" subtitle="Design + motion." />
-        <div className="mt-8 grid gap-4 sm:grid-cols-2">
+        <div className="mt-6 grid gap-4 sm:grid-cols-2">
           {skills.map((s) => (
             <div
               key={s.name}
@@ -284,9 +291,9 @@ export default function PortfolioPage() {
       </section>
 
       {/* Experience */}
-      <section className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
+      <section className="mx-auto max-w-6xl px-4 sm:px-6 py-8">
         <Header title="Experience" subtitle="What I’ve been building." />
-        <div className="mt-8 space-y-4">
+        <div className="mt-6 space-y-4">
           {experiences.map((e) => (
             <div
               key={e.role}
@@ -316,12 +323,12 @@ export default function PortfolioPage() {
       </section>
 
       {/* Services */}
-      <section id="services" className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
+      <section id="services" className="mx-auto max-w-6xl px-4 sm:px-6 py-8">
         <Header
           title="Services"
           subtitle="Pick what you need, skip what you don't."
         />
-        <div className="mt-8 grid gap-4 md:grid-cols-3">
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
           {[
             {
               name: "Brand Starter",
@@ -356,7 +363,7 @@ export default function PortfolioPage() {
       </section>
 
       {/* Contact CTA */}
-      <section id="contact" className="mx-auto max-w-6xl px-4 sm:px-6 py-16">
+      <section id="contact" className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
         <div className="rounded-3xl border border-neutral-800 bg-neutral-900/60 p-8">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <div>
@@ -377,6 +384,8 @@ export default function PortfolioPage() {
               <a
                 href="https://cal.com/your/intro"
                 className="inline-flex items-center gap-2 rounded-2xl border border-neutral-700 px-4 py-2 text-sm font-medium hover:bg-neutral-900 transition"
+                target="_blank"
+                rel="noreferrer"
               >
                 <ArrowUpRight className="h-4 w-4" /> Book a call
               </a>
@@ -392,7 +401,7 @@ export default function PortfolioPage() {
         </div>
       </footer>
 
-      {/* Lightbox Modal */}
+      {/* Lightbox */}
       <Lightbox
         isOpen={isOpen}
         slides={activeSlides}
@@ -404,6 +413,10 @@ export default function PortfolioPage() {
     </main>
   );
 }
+
+// -----------------------------
+// Small components
+// -----------------------------
 
 function Header({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
@@ -440,7 +453,10 @@ function IconLink({
   );
 }
 
-// --- Lightbox Modal ---
+// -----------------------------
+// Lightbox modal
+// -----------------------------
+
 function Lightbox({
   isOpen,
   slides,
@@ -456,17 +472,18 @@ function Lightbox({
   onPrev: () => void;
   onNext: () => void;
 }) {
-  const esc = (e: KeyboardEvent) => {
-    if (e.key === "Escape") onClose();
-    if (e.key === "ArrowLeft") onPrev();
-    if (e.key === "ArrowRight") onNext();
-  };
+  // ESC / arrow keys
   useEffect(() => {
-    if (!isOpen) return;
-    document.addEventListener("keydown", esc);
-    return () => document.removeEventListener("keydown", esc);
-  }, [isOpen]);
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") onClose();
+      if (e.key === "ArrowLeft") onPrev();
+      if (e.key === "ArrowRight") onNext();
+    };
+    if (isOpen) document.addEventListener("keydown", onKey);
+    return () => document.removeEventListener("keydown", onKey);
+  }, [isOpen, onClose, onPrev, onNext]);
 
+  // Swipe
   const [startX, setStartX] = useState<number | null>(null);
   const onPointerDown = (e: React.PointerEvent) => setStartX(e.clientX);
   const onPointerUp = (e: React.PointerEvent) => {
@@ -511,7 +528,7 @@ function Lightbox({
             >
               <X className="h-5 w-5" />
             </button>
-            {/* Media */}
+
             {slide?.type === "video" ? (
               <video
                 src={slide.src}
@@ -529,7 +546,7 @@ function Lightbox({
                 alt="slide"
               />
             )}
-            {/* Controls */}
+
             {slides.length > 1 && (
               <div className="pointer-events-none absolute inset-0 flex items-center justify-between">
                 <button
@@ -546,7 +563,7 @@ function Lightbox({
                 </button>
               </div>
             )}
-            {/* Dots */}
+
             {slides.length > 1 && (
               <div className="mt-3 flex justify-center gap-1">
                 {slides.map((_, i) => (
