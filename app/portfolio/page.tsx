@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowUpRight,
@@ -7,7 +7,6 @@ import {
   Linkedin,
   Mail,
   PlayCircle,
-  Star,
   Clock,
   MapPin,
   X,
@@ -37,7 +36,7 @@ const projects: Project[] = [
     blurb:
       "Logo suite (Sinhala/Latin), grid, typography scale, color system, and social templates.",
     tags: ["Branding", "Typography", "Logo", "Guidelines"],
-    thumb: "/portfolio/kultjur-logo-7.png",
+    thumb: "/portfolio/brand-identity/kultjur-logo-7.png",
     status: "Case Study",
     slides: [
       { type: "image", src: "/portfolio/brand-identity/kultjur-logo-7.png" },
@@ -215,17 +214,21 @@ export default function PortfolioPage() {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-20%" }}
               transition={{ duration: 0.5, delay: i * 0.05 }}
-              className="group overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900/40 hover:bg-neutral-900/70"
+              className="group cursor-pointer overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900/40 hover:bg-neutral-900/70"
+              onClick={() => openLightbox(p.slides, 0)}
+              onKeyDown={(e) =>
+                (e.key === "Enter" || e.key === " ") &&
+                openLightbox(p.slides, 0)
+              }
+              role="button"
+              tabIndex={0}
             >
-              <div className="relative aspect-[16/10] overflow-hidden">
+              <div className="relative aspect-[4/5] overflow-hidden">
                 <img
                   src={p.thumb}
                   alt="thumbnail"
                   className="h-full w-full object-cover transition-transform duration-300 group-hover:scale-105"
                 />
-                <span className="absolute left-3 top-3 inline-flex items-center gap-1 rounded-full bg-neutral-950/80 px-2 py-1 text-[10px] font-medium text-neutral-200 ring-1 ring-neutral-700">
-                  <Star className="h-3 w-3" /> {p.status}
-                </span>
               </div>
               <div className="p-4">
                 <h3 className="text-lg font-semibold tracking-tight">
@@ -244,7 +247,10 @@ export default function PortfolioPage() {
                 </div>
                 <div className="mt-4 flex items-center gap-3">
                   <button
-                    onClick={() => openLightbox(p.slides, 0)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      openLightbox(p.slides, 0);
+                    }}
                     className="inline-flex items-center gap-1 rounded-full border border-neutral-700 px-3 py-1 text-xs text-neutral-200 hover:bg-neutral-900 transition"
                   >
                     <PlayCircle className="h-4 w-4" /> Demo
@@ -474,91 +480,92 @@ function Lightbox({
     setStartX(null);
   };
 
-  if (!isOpen) return null;
   const slide = slides[index];
 
   return (
     <AnimatePresence>
-      <motion.div
-        key="backdrop"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm"
-        onClick={onClose}
-      >
-        <div
-          className="absolute inset-0 flex items-center justify-center"
-          onClick={(e) => e.stopPropagation()}
+      {isOpen && (
+        <motion.div
+          key="backdrop"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm"
+          onClick={onClose}
         >
-          <motion.div
-            key={index}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -10 }}
-            transition={{ duration: 0.2 }}
-            className="relative max-h-[90vh] w-[min(92vw,900px)]"
-            onPointerDown={onPointerDown}
-            onPointerUp={onPointerUp}
+          <div
+            className="absolute inset-0 flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()}
           >
-            <button
-              aria-label="Close"
-              onClick={onClose}
-              className="absolute -right-2 -top-2 rounded-full bg-white/10 p-2 ring-1 ring-white/20 hover:bg-white/20"
+            <motion.div
+              key={index}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.2 }}
+              className="relative max-h-[90vh] w-[min(92vw,900px)]"
+              onPointerDown={onPointerDown}
+              onPointerUp={onPointerUp}
             >
-              <X className="h-5 w-5" />
-            </button>
-            {/* Media */}
-            {slide?.type === "video" ? (
-              <video
-                src={slide.src}
-                poster={slide.poster}
-                className="max-h-[90vh] w-full rounded-xl object-contain"
-                autoPlay
-                muted
-                controls
-                playsInline
-              />
-            ) : (
-              <img
-                src={slide?.src}
-                className="max-h-[90vh] w-full rounded-xl object-contain"
-                alt="slide"
-              />
-            )}
-            {/* Controls */}
-            {slides.length > 1 && (
-              <div className="pointer-events-none absolute inset-0 flex items-center justify-between">
-                <button
-                  onClick={onPrev}
-                  className="pointer-events-auto ml-2 rounded-full bg-white/10 p-2 ring-1 ring-white/20 hover:bg-white/20"
-                >
-                  <ChevronLeft className="h-6 w-6" />
-                </button>
-                <button
-                  onClick={onNext}
-                  className="pointer-events-auto mr-2 rounded-full bg-white/10 p-2 ring-1 ring-white/20 hover:bg-white/20"
-                >
-                  <ChevronRight className="h-6 w-6" />
-                </button>
-              </div>
-            )}
-            {/* Dots */}
-            {slides.length > 1 && (
-              <div className="mt-3 flex justify-center gap-1">
-                {slides.map((_, i) => (
-                  <span
-                    key={i}
-                    className={`h-1.5 w-4 rounded-full ${
-                      i === index ? "bg-white" : "bg-white/30"
-                    }`}
-                  />
-                ))}
-              </div>
-            )}
-          </motion.div>
-        </div>
-      </motion.div>
+              <button
+                aria-label="Close"
+                onClick={onClose}
+                className="absolute -right-2 -top-2 rounded-full bg-white/10 p-2 ring-1 ring-white/20 hover:bg-white/20"
+              >
+                <X className="h-5 w-5" />
+              </button>
+              {/* Media */}
+              {slide?.type === "video" ? (
+                <video
+                  src={slide.src}
+                  poster={slide.poster}
+                  className="max-h-[90vh] w-full rounded-xl object-contain"
+                  autoPlay
+                  muted
+                  controls
+                  playsInline
+                />
+              ) : (
+                <img
+                  src={slide?.src}
+                  className="max-h-[90vh] w-full rounded-xl object-contain"
+                  alt="slide"
+                />
+              )}
+              {/* Controls */}
+              {slides.length > 1 && (
+                <div className="pointer-events-none absolute inset-0 flex items-center justify-between">
+                  <button
+                    onClick={onPrev}
+                    className="pointer-events-auto ml-2 rounded-full bg-white/10 p-2 ring-1 ring-white/20 hover:bg-white/20"
+                  >
+                    <ChevronLeft className="h-6 w-6" />
+                  </button>
+                  <button
+                    onClick={onNext}
+                    className="pointer-events-auto mr-2 rounded-full bg-white/10 p-2 ring-1 ring-white/20 hover:bg-white/20"
+                  >
+                    <ChevronRight className="h-6 w-6" />
+                  </button>
+                </div>
+              )}
+              {/* Dots */}
+              {slides.length > 1 && (
+                <div className="mt-3 flex justify-center gap-1">
+                  {slides.map((_, i) => (
+                    <span
+                      key={i}
+                      className={`h-1.5 w-4 rounded-full ${
+                        i === index ? "bg-white" : "bg-white/30"
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+            </motion.div>
+          </div>
+        </motion.div>
+      )}
     </AnimatePresence>
   );
 }
