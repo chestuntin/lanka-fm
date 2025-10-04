@@ -2,7 +2,6 @@
 import React, { useEffect, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
-  ArrowUpRight,
   Github,
   Linkedin,
   Mail,
@@ -170,6 +169,7 @@ export default function PortfolioPage() {
           >
             Brand identity, typography, layout systems, and scroll-stopping
             social carousels for Gen-Z/Sri Lankan audiences (සිංහල/English).
+            <br />
             Motion when it matters.
           </motion.p>
 
@@ -201,11 +201,11 @@ export default function PortfolioPage() {
               <IconLink href="mailto:jchenuka@gmail.com" label="Email">
                 <Mail className="h-5 w-5" />
               </IconLink>
-              <IconLink href="https://github.com/your" label="GitHub">
+              <IconLink href="https://github.com/chestuntin" label="GitHub">
                 <Github className="h-5 w-5" />
               </IconLink>
               <IconLink
-                href="https://www.linkedin.com/in/your"
+                href="https://www.linkedin.com/in/chenuka-j/"
                 label="LinkedIn"
               >
                 <Linkedin className="h-5 w-5" />
@@ -238,7 +238,7 @@ export default function PortfolioPage() {
               <div className="relative aspect-[4/5] overflow-hidden">
                 <img
                   src={p.thumb}
-                  alt="thumbnail"
+                  alt={`${p.title} thumbnail`}
                   className="h-full w-full object-contain bg-neutral-900 transition-transform duration-300 group-hover:scale-105"
                 />
               </div>
@@ -389,14 +389,6 @@ export default function PortfolioPage() {
               >
                 <Mail className="h-4 w-4" /> Email me
               </a>
-              <a
-                href="https://cal.com/your/intro"
-                className="inline-flex items-center gap-2 rounded-2xl border border-neutral-700 px-4 py-2 text-sm font-medium hover:bg-neutral-900 transition"
-                target="_blank"
-                rel="noreferrer"
-              >
-                <ArrowUpRight className="h-4 w-4" /> Book a call
-              </a>
             </div>
           </div>
         </div>
@@ -405,7 +397,7 @@ export default function PortfolioPage() {
       {/* Footer */}
       <footer className="border-t border-neutral-900/70 py-10">
         <div className="mx-auto max-w-6xl px-4 sm:px-6 text-sm text-neutral-400">
-          © {new Date().getFullYear()} KULTJUR® — Built with Next.js & Tailwind.
+          © {new Date().getFullYear()} KULTJUR®
         </div>
       </footer>
 
