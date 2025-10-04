@@ -14,9 +14,9 @@ import {
   ChevronRight,
 } from "lucide-react";
 
-// -----------------------------
-// Types
-// -----------------------------
+/* ===========================
+   Types
+   =========================== */
 
 type Slide = { type: "image" | "video"; src: string; poster?: string };
 
@@ -29,9 +29,9 @@ type Project = {
   slides: Slide[];
 };
 
-// -----------------------------
-// Data
-// -----------------------------
+/* ===========================
+   Data
+   =========================== */
 
 const projects: Project[] = [
   {
@@ -39,16 +39,21 @@ const projects: Project[] = [
     blurb:
       "Logo suite (Sinhala/Latin), grid, typography scale, color system, and social templates.",
     tags: ["Branding", "Typography", "Logo", "Guidelines"],
-    thumb: "/portfolio/brand-identity/kultjur-logo-7.png",
+    thumb: "/portfolio/brand-identity/kultjur-logo-1.png",
     status: "Case Study",
     slides: [
-      { type: "image", src: "/portfolio/brand-identity/kultjur-logo-7.png" },
+      { type: "image", src: "/portfolio/brand-identity/kultjur-logo-1.png" },
+      { type: "image", src: "/portfolio/brand-identity/kultjur-logo-2.png" },
+      { type: "image", src: "/portfolio/brand-identity/kultjur-logo-3.png" },
+      { type: "image", src: "/portfolio/brand-identity/kultjur-logo-4.png" },
+      { type: "image", src: "/portfolio/brand-identity/kultjur-logo-5.png" },
+      { type: "image", src: "/portfolio/brand-identity/kultjur-logo-6.png" },
     ],
   },
   {
     title: "IG Carousel Pack — 30 Templates",
     blurb:
-      "Punchy, sarcastic, high‑retention slides built for 4:5. Designed for scroll‑stop power.",
+      "Punchy, sarcastic, high-retention slides built for 4:5. Designed for scroll-stop power.",
     tags: ["Social", "Layout", "Photoshop"],
     thumb: "/portfolio/carousel-pack/slide-2.png",
     status: "Case Study",
@@ -100,7 +105,7 @@ const experiences = [
     where: "Hamburg → Colombo (Remote)",
     points: [
       "Shipped brand identities (logo suites, fonts, palettes, guidelines)",
-      "Designed high‑retention IG/TikTok carousels & packs (Sinhala/English)",
+      "Designed high-retention IG/TikTok carousels & packs (Sinhala/English)",
       "Built simple landing pages to showcase work & collect leads",
     ],
   },
@@ -110,15 +115,15 @@ const experiences = [
     period: "2022 — Present",
     where: "Remote",
     points: [
-      "Short‑form edits focusing on hooks, pacing, retention",
+      "Short-form edits focusing on hooks, pacing, retention",
       "Motion graphics for titles, captions, kinetic type",
     ],
   },
 ];
 
-// -----------------------------
-// Page
-// -----------------------------
+/* ===========================
+   Page
+   =========================== */
 
 export default function PortfolioPage() {
   const [isOpen, setIsOpen] = useState(false);
@@ -156,14 +161,15 @@ export default function PortfolioPage() {
             <span className="text-indigo-400">graphic designer</span> crafting
             bold, clean brand systems and socials.
           </motion.h1>
+
           <motion.p
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.05 }}
             className="mt-6 max-w-2xl text-lg text-neutral-300"
           >
-            Brand identity, typography, layout systems, and scroll‑stopping
-            social carousels for Gen‑Z/Sri Lankan audiences (සිංහල/English).
+            Brand identity, typography, layout systems, and scroll-stopping
+            social carousels for Gen-Z/Sri Lankan audiences (සිංහල/English).
             Motion when it matters.
           </motion.p>
 
@@ -183,12 +189,14 @@ export default function PortfolioPage() {
             >
               View Projects
             </button>
+
             <a
               href="mailto:jchenuka@gmail.com"
               className="rounded-2xl border border-neutral-700 px-4 py-2 text-sm font-medium hover:bg-neutral-900 transition"
             >
               Contact
             </a>
+
             <div className="ml-auto flex gap-2 text-neutral-300">
               <IconLink href="mailto:jchenuka@gmail.com" label="Email">
                 <Mail className="h-5 w-5" />
@@ -341,9 +349,9 @@ export default function PortfolioPage() {
               includes: ["30 templates", "Cover system", "Asset pack"],
             },
             {
-              name: "Motion Add‑On",
-              desc: "Kinetic type openers, lower‑thirds, caption styles for shorts/reels.",
-              includes: ["3 openers", "Lower‑thirds", "Caption style"],
+              name: "Motion Add-On",
+              desc: "Kinetic type openers, lower-thirds, caption styles for shorts/reels.",
+              includes: ["3 openers", "Lower-thirds", "Caption style"],
             },
           ].map((s) => (
             <div
@@ -371,7 +379,7 @@ export default function PortfolioPage() {
                 Hire me for graphic design.
               </h3>
               <p className="mt-1 text-neutral-300">
-                Brand identities, social packs, and kinetic‑type add‑ons.
+                Brand identities, social packs, and kinetic-type add-ons.
               </p>
             </div>
             <div className="flex gap-3">
@@ -414,9 +422,9 @@ export default function PortfolioPage() {
   );
 }
 
-// -----------------------------
-// Small components
-// -----------------------------
+/* ===========================
+   Small components
+   =========================== */
 
 function Header({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
@@ -453,9 +461,9 @@ function IconLink({
   );
 }
 
-// -----------------------------
-// Lightbox modal
-// -----------------------------
+/* ===========================
+   Lightbox modal
+   =========================== */
 
 function Lightbox({
   isOpen,
