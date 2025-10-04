@@ -1,60 +1,89 @@
 "use client";
-import React from "react";
-import { motion } from "framer-motion";
+import React, { useEffect, useMemo, useRef, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   ArrowUpRight,
   Github,
   Linkedin,
   Mail,
-  Globe,
   PlayCircle,
   Star,
   Clock,
   MapPin,
+  X,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 
 // ---
-// Portfolio Page Prototype (drop into app/portfolio/page.tsx or pages/portfolio.tsx)
-// TailwindCSS required. Optional: framer-motion & lucide-react.
-// Replace placeholder data below with real content.
+// Portfolio Page (drop into app/portfolio/page.tsx)
+// TailwindCSS + framer-motion + lucide-react required
 // ---
 
-const projects = [
+type Slide = { type: "image" | "video"; src: string; poster?: string };
+
+type Project = {
+  title: string;
+  blurb: string;
+  tags: string[];
+  thumb: string;
+  status: string;
+  slides: Slide[];
+};
+
+const projects: Project[] = [
   {
     title: "KULTJUR® Brand Identity System",
     blurb:
       "Logo suite (Sinhala/Latin), grid, typography scale, color system, and social templates.",
     tags: ["Branding", "Typography", "Logo", "Guidelines"],
-    links: { live: "https://kultjur.lk", repo: undefined },
     thumb: "/portfolio/kultjur-logo-7.png",
     status: "Case Study",
+    slides: [
+      { type: "image", src: "/portfolio/brand-identity/kultjur-logo-7.png" },
+      // Add more identity slides here later (color system, grids, mockups, etc.)
+    ],
   },
   {
     title: "IG Carousel Pack — 30 Templates",
     blurb:
-      "Punchy, sarcastic, high‑retention slides built for 4:5. Export‑ready PSD/FIG files.",
-    tags: ["Social", "Layout", "Figma", "Photoshop"],
-    links: { live: "https://links.kultjur.lk", repo: undefined },
-    thumb:
-      "https://images.unsplash.com/photo-1515162305280-d9b1dc3a0b51?q=80&w=1600&auto=format&fit=crop",
-    status: "Live",
+      "Punchy, sarcastic, high‑retention slides built for 4:5. Designed for scroll‑stop power.",
+    tags: ["Social", "Layout", "Photoshop"],
+    thumb: "/portfolio/carousel-pack/slide-2.png",
+    status: "Case Study",
+    slides: [
+      {
+        type: "video",
+        src: "/portfolio/carousel-pack/slide-1.mp4",
+        poster: "/portfolio/carousel-pack/slide-2.png",
+      },
+      { type: "image", src: "/portfolio/carousel-pack/slide-2.png" },
+      { type: "image", src: "/portfolio/carousel-pack/slide-3.png" },
+      { type: "image", src: "/portfolio/carousel-pack/slide-4.png" },
+      { type: "image", src: "/portfolio/carousel-pack/slide-5.png" },
+      { type: "image", src: "/portfolio/carousel-pack/slide-6.png" },
+    ],
   },
   {
     title: "Poster Series — LankaCore Minimal",
     blurb:
       "Monochrome type‑driven posters exploring Sinhala/English harmony, grid & rhythm.",
     tags: ["Poster", "Grid", "Type", "Print"],
-    links: { live: "https://kultjur.lk/posters", repo: undefined },
     thumb:
       "https://images.unsplash.com/photo-1511765224389-37f0e77cf0eb?q=80&w=1600&auto=format&fit=crop",
     status: "WIP",
+    slides: [
+      {
+        type: "image",
+        src: "https://images.unsplash.com/photo-1511765224389-37f0e77cf0eb?q=80&w=1600&auto=format&fit=crop",
+      },
+    ],
   },
 ];
 
 const skills = [
   { name: "Adobe Illustrator", level: 90 },
   { name: "Adobe Photoshop", level: 88 },
-  { name: "Figma", level: 85 },
   { name: "Typography & Grids", level: 90 },
   { name: "Color Systems", level: 85 },
   { name: "After Effects (Motion)", level: 78 },
@@ -86,12 +115,31 @@ const experiences = [
 ];
 
 export default function PortfolioPage() {
+  const [isOpen, setIsOpen] = useState(false);
+  const [activeSlides, setActiveSlides] = useState<Slide[]>([]);
+  const [index, setIndex] = useState(0);
+
+  const openLightbox = (slides: Slide[], start = 0) => {
+    setActiveSlides(slides);
+    setIndex(start);
+    setIsOpen(true);
+  };
+
+  const closeLightbox = () => setIsOpen(false);
+
+  const go = (dir: 1 | -1) => {
+    setIndex((i) => {
+      if (activeSlides.length === 0) return 0;
+      return (i + dir + activeSlides.length) % activeSlides.length;
+    });
+  };
+
   return (
     <main className="min-h-screen bg-neutral-950 text-neutral-100">
       {/* Hero */}
       <section className="relative overflow-hidden">
-        <div className="absolute inset-0 bg-[radial-gradient(60%_60%_at_50%_0%,rgba(99,102,241,0.15),transparent_60%)]" />
-        <div className="mx-auto max-w-6xl px-4 sm:px-6 py-20">
+        <div className="absolute inset-0 -z-10 pointer-events-none bg-[radial-gradient(60%_60%_at_50%_0%,rgba(99,102,241,0.15),transparent_60%)]" />
+        <div className="relative z-10 mx-auto max-w-6xl px-4 sm:px-6 py-20">
           <motion.h1
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -157,7 +205,7 @@ export default function PortfolioPage() {
       <section id="projects" className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
         <Header
           title="Selected Work"
-          subtitle="Real projects, shipped and in progress."
+          subtitle="Case studies, not just links."
         />
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-8">
           {projects.map((p, i) => (
@@ -195,21 +243,12 @@ export default function PortfolioPage() {
                   ))}
                 </div>
                 <div className="mt-4 flex items-center gap-3">
-                  <LinkPill
-                    href={p.links.live}
-                    icon={<Globe className="h-4 w-4" />}
-                    text="Live"
-                  />
-                  <LinkPill
-                    href={p.links.repo}
-                    icon={<Github className="h-4 w-4" />}
-                    text="Repo"
-                  />
-                  <LinkPill
-                    href="#"
-                    icon={<PlayCircle className="h-4 w-4" />}
-                    text="Demo"
-                  />
+                  <button
+                    onClick={() => openLightbox(p.slides, 0)}
+                    className="inline-flex items-center gap-1 rounded-full border border-neutral-700 px-3 py-1 text-xs text-neutral-200 hover:bg-neutral-900 transition"
+                  >
+                    <PlayCircle className="h-4 w-4" /> Demo
+                  </button>
                 </div>
               </div>
             </motion.article>
@@ -219,7 +258,7 @@ export default function PortfolioPage() {
 
       {/* Skills */}
       <section className="mx-auto max-w-6xl px-4 sm:px-6 py-12">
-        <Header title="Core Skills" subtitle="Design + code + motion." />
+        <Header title="Core Skills" subtitle="Design + motion." />
         <div className="mt-8 grid gap-4 sm:grid-cols-2">
           {skills.map((s) => (
             <div
@@ -322,8 +361,7 @@ export default function PortfolioPage() {
                 Hire me for graphic design.
               </h3>
               <p className="mt-1 text-neutral-300">
-                Brand identities, social packs, and kinetic‑type add‑ons. Video
-                editing optional.
+                Brand identities, social packs, and kinetic‑type add‑ons.
               </p>
             </div>
             <div className="flex gap-3">
@@ -350,6 +388,16 @@ export default function PortfolioPage() {
           © {new Date().getFullYear()} KULTJUR® — Built with Next.js & Tailwind.
         </div>
       </footer>
+
+      {/* Lightbox Modal */}
+      <Lightbox
+        isOpen={isOpen}
+        slides={activeSlides}
+        index={index}
+        onClose={closeLightbox}
+        onPrev={() => go(-1)}
+        onNext={() => go(1)}
+      />
     </main>
   );
 }
@@ -389,24 +437,128 @@ function IconLink({
   );
 }
 
-function LinkPill({
-  href,
-  icon,
-  text,
+// --- Lightbox Modal ---
+function Lightbox({
+  isOpen,
+  slides,
+  index,
+  onClose,
+  onPrev,
+  onNext,
 }: {
-  href?: string;
-  icon: React.ReactNode;
-  text: string;
+  isOpen: boolean;
+  slides: Slide[];
+  index: number;
+  onClose: () => void;
+  onPrev: () => void;
+  onNext: () => void;
 }) {
-  if (!href) return null;
+  const esc = (e: KeyboardEvent) => {
+    if (e.key === "Escape") onClose();
+    if (e.key === "ArrowLeft") onPrev();
+    if (e.key === "ArrowRight") onNext();
+  };
+  useEffect(() => {
+    if (!isOpen) return;
+    document.addEventListener("keydown", esc);
+    return () => document.removeEventListener("keydown", esc);
+  }, [isOpen]);
+
+  const [startX, setStartX] = useState<number | null>(null);
+  const onPointerDown = (e: React.PointerEvent) => setStartX(e.clientX);
+  const onPointerUp = (e: React.PointerEvent) => {
+    if (startX === null) return;
+    const dx = e.clientX - startX;
+    if (dx > 60) onPrev();
+    if (dx < -60) onNext();
+    setStartX(null);
+  };
+
+  if (!isOpen) return null;
+  const slide = slides[index];
+
   return (
-    <a
-      href={href}
-      target="_blank"
-      rel="noreferrer"
-      className="inline-flex items-center gap-1 rounded-full border border-neutral-700 px-3 py-1 text-xs text-neutral-200 hover:bg-neutral-900 transition"
-    >
-      {icon} {text}
-    </a>
+    <AnimatePresence>
+      <motion.div
+        key="backdrop"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm"
+        onClick={onClose}
+      >
+        <div
+          className="absolute inset-0 flex items-center justify-center"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <motion.div
+            key={index}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+            className="relative max-h-[90vh] w-[min(92vw,900px)]"
+            onPointerDown={onPointerDown}
+            onPointerUp={onPointerUp}
+          >
+            <button
+              aria-label="Close"
+              onClick={onClose}
+              className="absolute -right-2 -top-2 rounded-full bg-white/10 p-2 ring-1 ring-white/20 hover:bg-white/20"
+            >
+              <X className="h-5 w-5" />
+            </button>
+            {/* Media */}
+            {slide?.type === "video" ? (
+              <video
+                src={slide.src}
+                poster={slide.poster}
+                className="max-h-[90vh] w-full rounded-xl object-contain"
+                autoPlay
+                muted
+                controls
+                playsInline
+              />
+            ) : (
+              <img
+                src={slide?.src}
+                className="max-h-[90vh] w-full rounded-xl object-contain"
+                alt="slide"
+              />
+            )}
+            {/* Controls */}
+            {slides.length > 1 && (
+              <div className="pointer-events-none absolute inset-0 flex items-center justify-between">
+                <button
+                  onClick={onPrev}
+                  className="pointer-events-auto ml-2 rounded-full bg-white/10 p-2 ring-1 ring-white/20 hover:bg-white/20"
+                >
+                  <ChevronLeft className="h-6 w-6" />
+                </button>
+                <button
+                  onClick={onNext}
+                  className="pointer-events-auto mr-2 rounded-full bg-white/10 p-2 ring-1 ring-white/20 hover:bg-white/20"
+                >
+                  <ChevronRight className="h-6 w-6" />
+                </button>
+              </div>
+            )}
+            {/* Dots */}
+            {slides.length > 1 && (
+              <div className="mt-3 flex justify-center gap-1">
+                {slides.map((_, i) => (
+                  <span
+                    key={i}
+                    className={`h-1.5 w-4 rounded-full ${
+                      i === index ? "bg-white" : "bg-white/30"
+                    }`}
+                  />
+                ))}
+              </div>
+            )}
+          </motion.div>
+        </div>
+      </motion.div>
+    </AnimatePresence>
   );
 }
