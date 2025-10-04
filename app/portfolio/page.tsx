@@ -1,3 +1,4 @@
+"use client";
 import React from "react";
 import { motion } from "framer-motion";
 import {
@@ -8,7 +9,6 @@ import {
   Globe,
   PlayCircle,
   Star,
-  Folder,
   Clock,
   MapPin,
 } from "lucide-react";
