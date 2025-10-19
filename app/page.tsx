@@ -1,13 +1,13 @@
 "use client";
 
 import React, { useEffect } from "react";
-import { motion, useAnimation } from "framer-motion";
+import { motion, useAnimation, AnimationControls } from "framer-motion";
 
 // Replace this with your real Mixcloud stream URL
 const MIXCLOUD_URL = "https://www.mixcloud.com/your-profile/your-show/";
 
 export default function AnimatedHome(): JSX.Element {
-  const controls = useAnimation();
+  const controls: AnimationControls = useAnimation();
 
   useEffect(() => {
     // entrance animation loop for neon badge
@@ -298,7 +298,7 @@ export default function AnimatedHome(): JSX.Element {
       </footer>
 
       {/* Tailwind-friendly extra CSS (keyframes) */}
-      <style>{`
+      <style jsx>{`
         @keyframes bgPan {
           0% {
             background-position: 0 0;
