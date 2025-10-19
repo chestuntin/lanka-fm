@@ -28,7 +28,7 @@
     "**/*.tsx",
     ".next/types/**/*.ts",
     "app/article/[slug]/layout.tsx.temp",
-    "node_modules/styled-jsx/types"
+    "types/**/*.d.ts"
   ],
   "exclude": ["node_modules"]
 }
