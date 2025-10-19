@@ -2,6 +2,8 @@
 declare module "framer-motion" {
   export type AnimationControls = import("motion-dom").LegacyAnimationControls;
   export function useAnimation(): AnimationControls;
+  export function useMotionValue(initial?: any): any;
+  export function useSpring(source: any, config?: any): any;
   export const motion: any;
   export const AnimatePresence: any;
 }
