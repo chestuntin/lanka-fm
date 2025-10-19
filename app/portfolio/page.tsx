@@ -228,7 +228,7 @@ export default function PortfolioPage() {
               transition={{ duration: 0.5, delay: i * 0.05 }}
               className="group cursor-pointer overflow-hidden rounded-2xl border border-neutral-800 bg-neutral-900/40 hover:bg-neutral-900/70"
               onClick={() => openLightbox(p.slides, 0)}
-              onKeyDown={(e) =>
+              onKeyDown={(e: React.KeyboardEvent) =>
                 (e.key === "Enter" || e.key === " ") &&
                 openLightbox(p.slides, 0)
               }
