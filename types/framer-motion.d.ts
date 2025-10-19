@@ -3,6 +3,7 @@ declare module "framer-motion" {
   export type AnimationControls = import("motion-dom").LegacyAnimationControls;
   export function useAnimation(): AnimationControls;
   export const motion: any;
+  export const AnimatePresence: any;
 }
 
 // JSX namespace extension for styled-jsx
