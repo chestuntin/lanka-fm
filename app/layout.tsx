@@ -1,3 +1,4 @@
+import React from "react";
 import type { Metadata } from "next";
 import { VT323 } from "next/font/google";
 import { Analytics } from "@vercel/analytics/react";

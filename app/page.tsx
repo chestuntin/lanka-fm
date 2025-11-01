@@ -22,7 +22,8 @@ export default function HomePage() {
   const [bootSequence, setBootSequence] = useState<string[]>([]);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [theme, setTheme] = useState(themes[0]);
-  const timerRef = useRef<NodeJS.Timeout | number | null>(null);
+  // Fix: Use `number` for timer IDs in browser environments, not `NodeJS.Timeout`.
+  const timerRef = useRef<number | null>(null);
 
   // Memoize the boot text so it's consistent across renders and accessible everywhere
   const bootText = useMemo(() => {
@@ -68,13 +69,14 @@ export default function HomePage() {
   useEffect(() => {
     if (!userInfo || status !== "booting" || bootText.length === 0) return;
 
-    const timeouts: NodeJS.Timeout[] = [];
+    // Fix: Use `number` for timer IDs in browser environments, not `NodeJS.Timeout`.
+    const timeouts: number[] = [];
     let lineIndex = 0;
     let charIndex = 0;
 
     const type = () => {
       if (lineIndex >= bootText.length) {
-        timeouts.push(setTimeout(() => setStatus("summary"), 500));
+        timeouts.push(window.setTimeout(() => setStatus("summary"), 500));
         return;
       }
 
@@ -86,25 +88,25 @@ export default function HomePage() {
           return newSeq;
         });
         charIndex++;
-        timeouts.push(setTimeout(type, CHAR_SPEED));
+        timeouts.push(window.setTimeout(type, CHAR_SPEED));
       } else {
         lineIndex++;
         charIndex = 0;
-        timeouts.push(setTimeout(type, PAUSE_SPEED));
+        timeouts.push(window.setTimeout(type, PAUSE_SPEED));
       }
     };
 
-    timeouts.push(setTimeout(type, 500));
-    return () => timeouts.forEach(clearTimeout);
+    timeouts.push(window.setTimeout(type, 500));
+    return () => timeouts.forEach(window.clearTimeout);
   }, [userInfo, status, bootText]);
 
   // Phase 3: Transition from summary to countdown
   useEffect(() => {
     if (status === "summary") {
-      const transitionTimer = setTimeout(() => {
+      const transitionTimer = window.setTimeout(() => {
         setStatus("countdown");
       }, 2000);
-      return () => clearTimeout(transitionTimer);
+      return () => window.clearTimeout(transitionTimer);
     }
   }, [status]);
 
@@ -112,10 +114,11 @@ export default function HomePage() {
   useEffect(() => {
     if (status !== "countdown") return;
 
-    timerRef.current = setInterval(() => {
+    timerRef.current = window.setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
-          if (timerRef.current) clearInterval(timerRef.current as number);
+          // Fix: Removed unnecessary type assertion as timerRef.current is now correctly typed as `number | null`.
+          if (timerRef.current) window.clearInterval(timerRef.current);
           window.location.href = MIXCLOUD_URL;
           return 0;
         }
@@ -124,7 +127,8 @@ export default function HomePage() {
     }, 1000);
 
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current as number);
+      // Fix: Removed unnecessary type assertion as timerRef.current is now correctly typed as `number | null`.
+      if (timerRef.current) window.clearInterval(timerRef.current);
     };
   }, [status]);
 
