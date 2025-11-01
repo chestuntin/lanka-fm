@@ -76,6 +76,7 @@ export default function HomePage() {
 
     const type = () => {
       if (lineIndex >= bootText.length) {
+        // FIX: Use `window.setTimeout` to ensure the browser's `setTimeout` is used, which returns a number.
         timeouts.push(window.setTimeout(() => setStatus("summary"), 500));
         return;
       }
@@ -88,25 +89,29 @@ export default function HomePage() {
           return newSeq;
         });
         charIndex++;
+        // FIX: Use `window.setTimeout` to ensure the browser's `setTimeout` is used, which returns a number.
         timeouts.push(window.setTimeout(type, CHAR_SPEED));
       } else {
         lineIndex++;
         charIndex = 0;
+        // FIX: Use `window.setTimeout` to ensure the browser's `setTimeout` is used, which returns a number.
         timeouts.push(window.setTimeout(type, PAUSE_SPEED));
       }
     };
 
+    // FIX: Use `window.setTimeout` to ensure the browser's `setTimeout` is used, which returns a number.
     timeouts.push(window.setTimeout(type, 500));
-    return () => timeouts.forEach(window.clearTimeout);
+    return () => timeouts.forEach(clearTimeout);
   }, [userInfo, status, bootText]);
 
   // Phase 3: Transition from summary to countdown
   useEffect(() => {
     if (status === "summary") {
+      // FIX: Use `window.setTimeout` for consistency and to avoid type conflicts with Node.js types.
       const transitionTimer = window.setTimeout(() => {
         setStatus("countdown");
       }, 2000);
-      return () => window.clearTimeout(transitionTimer);
+      return () => clearTimeout(transitionTimer);
     }
   }, [status]);
 
@@ -114,11 +119,12 @@ export default function HomePage() {
   useEffect(() => {
     if (status !== "countdown") return;
 
+    // FIX: Use `window.setInterval` to ensure the browser's `setInterval` is used, which returns a number, matching the ref's type.
     timerRef.current = window.setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
           // Fix: Removed unnecessary type assertion as timerRef.current is now correctly typed as `number | null`.
-          if (timerRef.current) window.clearInterval(timerRef.current);
+          if (timerRef.current) clearInterval(timerRef.current);
           window.location.href = MIXCLOUD_URL;
           return 0;
         }
@@ -128,7 +134,7 @@ export default function HomePage() {
 
     return () => {
       // Fix: Removed unnecessary type assertion as timerRef.current is now correctly typed as `number | null`.
-      if (timerRef.current) window.clearInterval(timerRef.current);
+      if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [status]);
 
