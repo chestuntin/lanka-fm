@@ -239,7 +239,7 @@ main {
 
 .booting-content p {
   margin: 0;
-  font-size: clamp(1rem, 2.5vw, 1.5rem);
+  font-size: clamp(0.5rem, 3.5vmin, 1.5rem);
   height: 1.2em;
   white-space: pre;
 }
