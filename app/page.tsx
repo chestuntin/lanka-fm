@@ -16,6 +16,48 @@ interface UserInfo {
 
 const themes = ["amber", "green", "blue"];
 
+/**
+ * Checks if the current time in Sri Lanka (Asia/Colombo) is within the
+ * restricted window (10:30 PM to 6:00 AM).
+ * @returns {boolean} True if the time is within the restricted period, false otherwise.
+ */
+const isRestrictedTime = (): boolean => {
+  try {
+    const now = new Date();
+    const options: Intl.DateTimeFormatOptions = {
+      timeZone: "Asia/Colombo",
+      hour: "numeric",
+      minute: "numeric",
+      hour12: false,
+    };
+
+    // Using a specific locale like 'en-GB' helps ensure a consistent format (e.g., 24-hour clock)
+    const formatter = new Intl.DateTimeFormat("en-GB", options);
+    const parts = formatter.formatToParts(now);
+
+    const hourPart = parts.find((part) => part.type === "hour");
+    const minutePart = parts.find((part) => part.type === "minute");
+
+    if (!hourPart || !minutePart) {
+      console.error("Could not determine time in Asia/Colombo.");
+      return false; // Default to not restricted if time parts are missing
+    }
+
+    // The 'en-GB' format can return '24' for midnight. Modulo 24 handles this (24 % 24 = 0).
+    const hour = parseInt(hourPart.value, 10) % 24;
+    const minute = parseInt(minutePart.value, 10);
+
+    // Restriction is from 22:30 (10:30 PM) to 06:00 (6:00 AM)
+    const isAfterStartTime = hour > 22 || (hour === 22 && minute >= 30);
+    const isBeforeEndTime = hour < 6;
+
+    return isAfterStartTime || isBeforeEndTime;
+  } catch (error) {
+    console.error("Error checking restricted time:", error);
+    return false; // Safely default to not restricted on any error
+  }
+};
+
 export default function HomePage() {
   const [countdown, setCountdown] = useState(5);
   const [status, setStatus] = useState("booting"); // booting, summary, countdown, cancelled, mobileNotice
@@ -136,7 +178,10 @@ export default function HomePage() {
         if (prev <= 1) {
           // Fix: Removed unnecessary type assertion as timerRef.current is now correctly typed as `number | null`.
           if (timerRef.current) clearInterval(timerRef.current);
-          if (isMobile) {
+
+          const mobileShouldBeBlocked = isMobile && isRestrictedTime();
+
+          if (mobileShouldBeBlocked) {
             setStatus("mobileNotice");
             return 0;
           }
