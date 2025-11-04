@@ -18,12 +18,23 @@ const themes = ["amber", "green", "blue"];
 
 export default function HomePage() {
   const [countdown, setCountdown] = useState(5);
-  const [status, setStatus] = useState("booting"); // booting, summary, countdown, cancelled
+  const [status, setStatus] = useState("booting"); // booting, summary, countdown, cancelled, mobileNotice
   const [bootSequence, setBootSequence] = useState<string[]>([]);
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [theme, setTheme] = useState(themes[0]);
+  const [isMobile, setIsMobile] = useState(false);
   // Fix: Use `number` for timer IDs in browser environments, not `NodeJS.Timeout`.
   const timerRef = useRef<number | null>(null);
+
+  // Check for mobile device on mount
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const mobileCheck = /Mobi|Android|iPhone|iPad|iPod|Windows Phone/i.test(
+        navigator.userAgent
+      );
+      setIsMobile(mobileCheck);
+    }
+  }, []);
 
   // Memoize the boot text so it's consistent across renders and accessible everywhere
   const bootText = useMemo(() => {
@@ -125,6 +136,10 @@ export default function HomePage() {
         if (prev <= 1) {
           // Fix: Removed unnecessary type assertion as timerRef.current is now correctly typed as `number | null`.
           if (timerRef.current) clearInterval(timerRef.current);
+          if (isMobile) {
+            setStatus("mobileNotice");
+            return 0;
+          }
           window.location.href = MIXCLOUD_URL;
           return 0;
         }
@@ -136,7 +151,7 @@ export default function HomePage() {
       // Fix: Removed unnecessary type assertion as timerRef.current is now correctly typed as `number | null`.
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [status]);
+  }, [status, isMobile]);
 
   // Cancellation logic
   useEffect(() => {
@@ -196,6 +211,52 @@ export default function HomePage() {
           {`| Init Live Stream in T-${countdown}...      |\n`}
           {`+---------------------------------+`}
         </pre>
+      );
+    }
+
+    if (status === "mobileNotice") {
+      return (
+        <div className="standby-content">
+          <div className="status-indicator">SIGNAL LOST</div>
+          <h1 className="welcome-text">LANKA.FM</h1>
+          <p className="cancelled-subtitle">Mobile Stream Unavailable</p>
+          <div className="cancelled-actions" style={{ textAlign: "left" }}>
+            <p
+              style={{
+                margin: "0 0 1rem 0",
+                fontSize: "clamp(1rem, 2.5vw, 1.5rem)",
+              }}
+            >
+              Our broadcast is not yet optimized for mobile devices. Please tune
+              in from a desktop computer for the best experience.
+            </p>
+            <div className="reconnect-prompt">
+              <span>&gt; </span>
+              <button
+                className="cmd-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  restartCountdown();
+                }}
+              >
+                [RETRY CONNECTION]
+              </button>
+            </div>
+            <div className="reconnect-prompt">
+              <span>&gt; </span>
+              <button
+                className="cmd-btn"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleTheme();
+                }}
+              >
+                [ CYCLE THEME ]
+              </button>
+              <span className="blinking-cursor"></span>
+            </div>
+          </div>
+        </div>
       );
     }
 
