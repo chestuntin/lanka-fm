@@ -262,19 +262,23 @@ export default function HomePage() {
     if (status === "mobileNotice") {
       return (
         <div className="standby-content">
-          <div className="status-indicator">SIGNAL LOST</div>
+          <div className="status-indicator">AFTER HOURS</div>
           <h1 className="welcome-text">LANKA.FM</h1>
-          <p className="cancelled-subtitle">Mobile Stream Unavailable</p>
+          <p className="cancelled-subtitle after-hours-title">
+            Mobile Stream Unavailable
+          </p>
           <div className="cancelled-actions" style={{ textAlign: "left" }}>
-            <p
+            <div
               style={{
                 margin: "0 0 1rem 0",
                 fontSize: "clamp(1rem, 2.5vw, 1.5rem)",
+                whiteSpace: "pre-wrap",
               }}
             >
-              Our broadcast is not yet optimized for mobile devices. Please tune
-              in from a desktop computer for the best experience.
-            </p>
+              {`Our broadcast isn’t meant for phones during these hours.
+Tune in from your desktop when the night feels right.
+It’s www.lanka.fm`}
+            </div>
             <div className="reconnect-prompt">
               <span>&gt; </span>
               <button

@@ -263,6 +263,11 @@ main {
   margin-bottom: 2rem;
 }
 
+.after-hours-title {
+  font-size: clamp(1.5rem, 3.5vw, 2.2rem);
+  animation: soft-flash 2.5s ease-in-out infinite;
+}
+
 .cancelled-actions {
   display: flex;
   flex-direction: column;
@@ -388,5 +393,17 @@ main {
   100% {
     opacity: 1;
     text-shadow: 0 0 5px var(--crt-glow), 0 0 10px var(--crt-glow);
+  }
+}
+
+@keyframes soft-flash {
+  0%,
+  100% {
+    opacity: 1;
+    text-shadow: 0 0 5px var(--crt-glow), 0 0 8px var(--crt-glow);
+  }
+  50% {
+    opacity: 0.8;
+    text-shadow: 0 0 4px var(--crt-glow);
   }
 }
