@@ -31,7 +31,6 @@ const isRestrictedTime = (): boolean => {
       hour12: false,
     };
 
-    // Using a specific locale like 'en-GB' helps ensure a consistent format (e.g., 24-hour clock)
     const formatter = new Intl.DateTimeFormat("en-GB", options);
     const parts = formatter.formatToParts(now);
 
@@ -40,10 +39,9 @@ const isRestrictedTime = (): boolean => {
 
     if (!hourPart || !minutePart) {
       console.error("Could not determine time in Asia/Colombo.");
-      return false; // Default to not restricted if time parts are missing
+      return false;
     }
 
-    // The 'en-GB' format can return '24' for midnight. Modulo 24 handles this (24 % 24 = 0).
     const hour = parseInt(hourPart.value, 10) % 24;
     const minute = parseInt(minutePart.value, 10);
 
@@ -54,7 +52,7 @@ const isRestrictedTime = (): boolean => {
     return isAfterStartTime || isBeforeEndTime;
   } catch (error) {
     console.error("Error checking restricted time:", error);
-    return false; // Safely default to not restricted on any error
+    return false;
   }
 };
 
@@ -65,8 +63,8 @@ export default function HomePage() {
   const [userInfo, setUserInfo] = useState<UserInfo | null>(null);
   const [theme, setTheme] = useState(themes[0]);
   const [isMobile, setIsMobile] = useState(false);
-  // Fix: Use `number` for timer IDs in browser environments, not `NodeJS.Timeout`.
   const timerRef = useRef<number | null>(null);
+  const preconnectAdded = useRef(false);
 
   // Check for mobile device on mount
   useEffect(() => {
@@ -122,14 +120,12 @@ export default function HomePage() {
   useEffect(() => {
     if (!userInfo || status !== "booting" || bootText.length === 0) return;
 
-    // Fix: Use `number` for timer IDs in browser environments, not `NodeJS.Timeout`.
     const timeouts: number[] = [];
     let lineIndex = 0;
     let charIndex = 0;
 
     const type = () => {
       if (lineIndex >= bootText.length) {
-        // FIX: Use `window.setTimeout` to ensure the browser's `setTimeout` is used, which returns a number.
         timeouts.push(window.setTimeout(() => setStatus("summary"), 500));
         return;
       }
@@ -142,17 +138,14 @@ export default function HomePage() {
           return newSeq;
         });
         charIndex++;
-        // FIX: Use `window.setTimeout` to ensure the browser's `setTimeout` is used, which returns a number.
         timeouts.push(window.setTimeout(type, CHAR_SPEED));
       } else {
         lineIndex++;
         charIndex = 0;
-        // FIX: Use `window.setTimeout` to ensure the browser's `setTimeout` is used, which returns a number.
         timeouts.push(window.setTimeout(type, PAUSE_SPEED));
       }
     };
 
-    // FIX: Use `window.setTimeout` to ensure the browser's `setTimeout` is used, which returns a number.
     timeouts.push(window.setTimeout(type, 500));
     return () => timeouts.forEach(clearTimeout);
   }, [userInfo, status, bootText]);
@@ -160,7 +153,6 @@ export default function HomePage() {
   // Phase 3: Transition from summary to countdown
   useEffect(() => {
     if (status === "summary") {
-      // FIX: Use `window.setTimeout` for consistency and to avoid type conflicts with Node.js types.
       const transitionTimer = window.setTimeout(() => {
         setStatus("countdown");
       }, 2000);
@@ -168,23 +160,62 @@ export default function HomePage() {
     }
   }, [status]);
 
-  // Countdown timer logic
+  // Countdown timer logic with preconnect warm-up
   useEffect(() => {
     if (status !== "countdown") return;
 
-    // FIX: Use `window.setInterval` to ensure the browser's `setInterval` is used, which returns a number, matching the ref's type.
     timerRef.current = window.setInterval(() => {
       setCountdown((prev) => {
+        // Warm up connection to Mixcloud when 3 seconds remain so redirect feels snappy
+        if (
+          prev === 3 &&
+          !preconnectAdded.current &&
+          typeof document !== "undefined"
+        ) {
+          try {
+            const linkPre = document.createElement("link");
+            linkPre.rel = "preconnect";
+            linkPre.href = "https://www.mixcloud.com";
+            linkPre.crossOrigin = "anonymous";
+            document.head.appendChild(linkPre);
+
+            const linkDns = document.createElement("link");
+            linkDns.rel = "dns-prefetch";
+            linkDns.href = "https://www.mixcloud.com";
+            document.head.appendChild(linkDns);
+
+            preconnectAdded.current = true;
+            console.log(
+              JSON.stringify({
+                ts: Date.now(),
+                event: "preconnect_added",
+                host: "mixcloud.com",
+              })
+            );
+          } catch (err) {
+            console.warn("preconnect failed", err);
+          }
+        }
+
         if (prev <= 1) {
-          // Fix: Removed unnecessary type assertion as timerRef.current is now correctly typed as `number | null`.
           if (timerRef.current) clearInterval(timerRef.current);
 
           const mobileShouldBeBlocked = isMobile && isRestrictedTime();
+          console.log(
+            JSON.stringify({
+              ts: Date.now(),
+              event: "countdown_end_check",
+              mobile: isMobile,
+              restrictedTime: isRestrictedTime(),
+              block: mobileShouldBeBlocked,
+            })
+          );
 
           if (mobileShouldBeBlocked) {
             setStatus("mobileNotice");
             return 0;
           }
+          // Desktop: redirect to Mixcloud
           window.location.href = MIXCLOUD_URL;
           return 0;
         }
@@ -193,7 +224,6 @@ export default function HomePage() {
     }, 1000);
 
     return () => {
-      // Fix: Removed unnecessary type assertion as timerRef.current is now correctly typed as `number | null`.
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [status, isMobile]);
@@ -268,14 +298,12 @@ export default function HomePage() {
             Mobile Stream Unavailable
           </p>
           <div className="cancelled-actions" style={{ textAlign: "left" }}>
-            <div
-              style={{
-                margin: "0 0 1rem 0",
-                fontSize: "clamp(1rem, 2.5vw, 1.5rem)",
-              }}
-            >
-              {`Our broadcast isn’t meant for phones during these hours. Tune in from your desktop when the night feels right. It’s www.lanka.fm`}
-            </div>
+            <p className="notice-paragraph fade-in">
+              Our broadcast isn’t meant for phones during these hours. <br />
+              Tune in from your desktop when the night feels right. <br />
+              <span className="site-link">It’s www.lanka.fm</span>
+            </p>
+
             <div className="reconnect-prompt">
               <span>&gt; </span>
               <button
@@ -288,6 +316,7 @@ export default function HomePage() {
                 [RETRY CONNECTION]
               </button>
             </div>
+
             <div className="reconnect-prompt">
               <span>&gt; </span>
               <button
@@ -309,7 +338,7 @@ export default function HomePage() {
     if (status === "cancelled") {
       return (
         <div className="standby-content">
-          <div className="status-indicator">SIGNAL LOST</div>
+          <div className="status-indicator">AFTER HOURS</div>
           <h1 className="welcome-text">LANKA.FM</h1>
           <p className="cancelled-subtitle">Connection Terminated.</p>
           <div className="cancelled-actions">
